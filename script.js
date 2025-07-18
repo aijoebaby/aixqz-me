@@ -31,15 +31,11 @@ if (data.reply) {
 
   // --- speech-synthesis block ---
   if ('speechSynthesis' in window) {
-    const utter = new SpeechSynthesisUtterance(data.reply);
-    utter.lang = "en-US";        // pick any voice/language installed
-    speechSynthesis.speak(utter);
-  }
-  // --- end speech block ---
-
-} else if (data.error) {
-  alert("Joey had trouble: " + data.error);
-}
+    const utter = new Speech
+}// --- Ask AI (Joey) ---
+async function askAI() {
+  const promptText = prompt("What do you want to ask Joey?");
+  if (!promptText) return;
 
   try {
     const res = await fetch("/.netlify/functions/askAI", {
@@ -47,15 +43,30 @@ if (data.reply) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt: promptText })
     });
+
     const data = await res.json();
-    alert(data.reply || data.error || "No response");
+
+    if (data.reply) {
+      // Show Joey's reply
+      alert("Joey says:\n\n" + data.reply);
+
+      // Optional: speak reply aloud
+      if ("speechSynthesis" in window) {
+        const utter = new SpeechSynthesisUtterance(data.reply);
+        utter.lang = "en-US";
+        speechSynthesis.speak(utter);
+      }
+    } else if (data.error) {
+      alert("Joey had trouble: " + data.error);
+    } else {
+      alert("No response from Joey.");
+    }
   } catch (err) {
-    alert("Network error: " + err);
+    alert("Network error talking to Joey: " + err);
   }
 }
 
-  
-}
+   
 function tellJoke() {
   alert("Why did the AI cross the road? To optimize the chicken!");
 }
