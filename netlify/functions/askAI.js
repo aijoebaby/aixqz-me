@@ -1,5 +1,5 @@
 // netlify/functions/askAI.js
-exports.handler = async function (event) {
+exports.handler = async functions (event) {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
