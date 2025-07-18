@@ -23,9 +23,24 @@ function trackMood() {
 }
 function manageList() {
   alert("List management coming soon.");
+}async function askAI() {
+  const promptText = prompt("What do you want to ask Joey?");
+  if (!promptText) return;
+
+  try {
+    const res = await fetch("/.netlify/functions/askAI", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: promptText })
+    });
+    const data = await res.json();
+    alert(data.reply || data.error || "No response");
+  } catch (err) {
+    alert("Network error: " + err);
+  }
 }
-function askAI() {
-  alert("Ask AI feature coming soon.");
+
+  
 }
 function tellJoke() {
   alert("Why did the AI cross the road? To optimize the chicken!");
