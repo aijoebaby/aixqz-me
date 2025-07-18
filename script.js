@@ -25,7 +25,21 @@ function manageList() {
   alert("List management coming soon.");
 }async function askAI() {
   const promptText = prompt("What do you want to ask Joey?");
-  if (!promptText) return;
+  if (!promptText) return;const data = await res.json();
+if (data.reply) {
+  alert("Joey says:\n\n" + data.reply);
+
+  // --- speech-synthesis block ---
+  if ('speechSynthesis' in window) {
+    const utter = new SpeechSynthesisUtterance(data.reply);
+    utter.lang = "en-US";        // pick any voice/language installed
+    speechSynthesis.speak(utter);
+  }
+  // --- end speech block ---
+
+} else if (data.error) {
+  alert("Joey had trouble: " + data.error);
+}
 
   try {
     const res = await fetch("/.netlify/functions/askAI", {
