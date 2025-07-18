@@ -75,4 +75,14 @@ function fixSomething() {
 }
 function findPlace() {
   alert("Finding nearby place - coming soon.");
+}/* Mobile tweaks */
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.4rem;
+  }
+  button {
+    width: 90%;
+    max-width: 320px;
+    font-size: 15px;
+  }
 }
