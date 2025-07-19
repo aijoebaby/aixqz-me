@@ -1,19 +1,81 @@
+/* CSS Variables for easy theming */
+:root {
+  --primary-color: #4caf50;
+  --primary-hover: #45a049;
+  --background: #f0f8ff;
+  --text-color: #222;
+  --button-radius: 5px;
+  --font-stack: Arial, Helvetica, sans-serif;
+  --spacing: 1.5rem;
+}
+
+/* Reset some default browser styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Body styles */
 body {
-  background-color: #f0f8ff;
-  font-family: Arial, sans-serif;
+  background-color: var(--background);
+  color: var(--text-color);
+  font-family: var(--font-stack);
+  padding: var(--spacing);
+  min-height: 100vh;
   text-align: center;
-  padding: 20px;
+  line-height: 1.5;
 }
+
+/* Buttons */
 button {
-  margin: 8px;
-  padding: 12px 20px;
-  font-size: 16px;
+  background-color: var(--primary-color);
+  color: #fff;
   border: none;
-  border-radius: 5px;
-  background-color: #4CAF50;
-  color: white;
+  border-radius: var(--button-radius);
+  padding: 0.75em 1.5em;
+  margin: 0.5em;
+  font-size: 1rem;
   cursor: pointer;
+  transition: background-color 0.3s;
 }
-button:hover {
-  background-color: #45a049;
+
+button:hover,
+button:focus {
+  background-color: var(--primary-hover);
+  outline: 2px solid var(--primary-hover);
+  outline-offset: 2px;
+}
+
+/* Responsive text and layout */
+@media (max-width: 600px) {
+  body {
+    padding: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  button {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1em;
+    padding: 1em;
+  }
+}
+
+/* Example for other common elements */
+h1, h2, h3, h4, h5, h6 {
+  margin-bottom: 0.75em;
+  font-weight: 700;
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: text-decoration 0.2s;
+}
+a:hover,
+a:focus {
+  text-decoration: underline;
 }
