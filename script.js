@@ -26,8 +26,16 @@ function manageList() {
 }async function askAI() {
   const promptText = prompt("What do you want to ask Joey?");
   if (!promptText) return;const data = await res.json();
-if (data.reply) {
+if(data.reply) {
+  // 🗣️ Speak first
+  if ("speechSynthesis" in window) {
+    const utter = new SpeechSynthesisUtterance(data.reply);
+    utter.lang = "en-US";       // adjust voice as needed
+    speechSynthesis.speak(utter);
+  }
+  // Show text after we start speaking
   alert("Joey says:\n\n" + data.reply);
+}
 
   // --- speech-synthesis block ---
   if ('speechSynthesis' in window) {
