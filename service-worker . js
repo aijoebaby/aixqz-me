@@ -1,22 +1,55 @@
 // service-worker.js – cache app shell
-const CACHE = "aijoe-v1";
-const ASSETS = [
+
+const CACHE_VERSION = 1;
+const CACHE_NAME = `aijoe-v${CACHE_VERSION}`;
+const STATIC_ASSETS = [
   "./",
   "./index.html",
   "./style.css",
   "./script.js",
   "./joey-bg.png",
-  "./manifest.json"
+  "./manifest.json",
+  "./offline.html" // Add an offline fallback page if you have one
 ];
 
-self.addEventListener("install", (evt) => {
-  evt.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(ASSETS))
+// Install event: cache static assets
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
+  self.skipWaiting();
 });
 
-self.addEventListener("fetch", (evt) => {
-  evt.respondWith(
-    caches.match(evt.request).then((resp) => resp || fetch(evt.request))
+// Activate event: clean up old caches
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache);
+          }
+        })
+      )
+    )
+  );
+  self.clients.claim();
+});
+
+// Fetch event: respond with cached assets, or fetch from network
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return; // Only handle GET requests
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request).catch(() => {
+        // If request fails and it's a navigation, show offline fallback
+        if (event.request.mode === "navigate") {
+          return caches.match("./offline.html");
+        }
+      });
+    })
   );
 });
