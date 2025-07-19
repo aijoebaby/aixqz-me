@@ -1,115 +1,34 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AIJoe Voice</title>
-  <meta name="description" content="AIJoe Voice - Your personal AI assistant for daily tasks and fun activities.">
-  <meta name="keywords" content="AI, personal assistant, voice, productivity">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self';">
-  <style>
-    body {
-      background-image: url('./joey-bg.png');
-      background-size: cover;
-      background-repeat: no-repeat;
-      text-align: center;
-      padding-top: 30px;
-      font-family: Arial, sans-serif;
-      color: #222;
-      min-height: 100vh;
-      margin: 0;
-    }
-    header {
-      margin-bottom: 2rem;
-    }
-    .profile-img {
-      width: 120px;
-      border-radius: 50%;
-      margin-bottom: 1rem;
-    }
-    .btn-group {
-      margin: 2rem 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: center;
-    }
-    button {
-      padding: 0.75em 1.5em;
-      font-size: 1rem;
-      border: none;
-      border-radius: 25px;
-      background: #1976d2;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.2s;
-      outline: none;
-    }
-    button:focus, button:hover {
-      background: #1565c0;
-    }
-    @media (max-width: 600px) {
-      .profile-img {
-        width: 80px;
-      }
-      button {
-        width: 100%;
-        font-size: 1em;
-      }
-      .btn-group {
-        flex-direction: column;
-        align-items: stretch;
-      }
-    }
-  </style>
+  <meta name="theme-color" content="#4CAF50" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
 </head>
-<body>
-  <header>
-    <img src="./joey-bg.png" alt="Portrait of Joey, your AI assistant" class="profile-img" loading="lazy" />
-    <h1>Welcome to <strong>AIJoe Voice</strong>!</h1>
-    <p>Your personal AI assistant for daily tasks and fun activities.</p>
-  </header>
-  <main>
-    <nav class="btn-group" aria-label="Main actions">
-      <button type="button" onclick="askAI()" aria-label="Ask the AI anything">Ask AI</button>
-      <button type="button" onclick="fixSomething()" aria-label="Fix something">Fix Something</button>
-      <button type="button" onclick="tellJoke()" aria-label="Tell a joke">Tell Me a Joke</button>
-      <button type="button" onclick="getWeather()" aria-label="Get weather">Get Weather</button>
-      <button type="button" onclick="setReminder()" aria-label="Set a reminder">Set Reminder</button>
-    </nav>
-    <section id="output" aria-live="polite" style="margin:2rem 0;font-size:1.2em;"></section>
-  </main>
-  <footer>
-    <p>&copy; <span id="year"></span> AIJoe Voice. All rights reserved.</p>
-  </footer>
-  <script>
-    // Example placeholder functions; replace with your actual implementations.
-    function askAI() {
-      document.getElementById('output').textContent = "How can I help you?";
-    }
-    function fixSomething() {
-      document.getElementById('output').textContent = "Describe what needs fixing!";
-    }
-    function tellJoke() {
-      document.getElementById('output').textContent = "Why did the AI cross the road? To optimize the chicken!";
-    }
-    function getWeather() {
-      document.getElementById('output').textContent = "Fetching weather data…";
-    }
-    function setReminder() {
-      document.getElementById('output').textContent = "What would you like to be reminded about?";
-    }
-    // Set current year in footer
-    document.getElementById('year').textContent = new Date().getFullYear();
+<body style="background-image:url('./joey-bg.png');background-size:cover;background-repeat:no-repeat;text-align:center;padding-top:30px;">
+  <h1>Welcome to AIJoe Voice!</h1>
 
-    // Register Service Worker (with error handling)
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("./service-worker.js")
-        .then(() => console.log("Service Worker Registered"))
-        .catch(err => console.error("Service Worker Registration Failed:", err));
+  <button onclick="startVoice()">Talk to AIJoe</button>
+  <button onclick="fetchBibleVerse()">Daily Bible Verse</button>
+  <button onclick="getLocation()">GPS</button>
+  <button onclick="callEmergency()">Instant Help</button>
+  <button onclick="playMusic()">Music</button>
+  <button onclick="fetchWeather()">Weather</button>
+  <button onclick="trackMood()">Mood</button>
+  <button onclick="manageList()">List</button>
+  <button onclick="askAI()">Ask AI</button>
+  <button onclick="tellJoke()">Joke</button>
+  <button onclick="fixSomething()">Help Me Fix Something</button>
+  <button onclick="findPlace()">Find Nearby Place</button>
+
+  <script src="script.js"></script>
+  <script>
+    // register service-worker for PWA (optional)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js').catch(console.error);
     }
   </script>
 </body>
