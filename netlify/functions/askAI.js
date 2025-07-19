@@ -1,4 +1,26 @@
-//netlify/functions/askAI.js
+/function speak(text) {
+  if (!("speechSynthesis" in window)) return;  // browser unsupported
+
+  function _speak() {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "en-US";
+    speechSynthesis.speak(utter);
+  }
+
+  // If voices are not yet loaded, wait for them
+  if (speechSynthesis.getVoices().length === 0) {
+    window.speechSynthesis.addEventListener("voiceschanged", _speak, { once: true });
+  } else {
+    _speak();
+  }
+}
+
+/* --- inside askAI success block --- */
+if (data.reply) {
+  speak(data.reply);               // 🔈 speaks first
+  alert("Joey says:\n\n" + data.reply);
+}
+netlify/functions/askAI.js
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
