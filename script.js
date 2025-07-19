@@ -93,4 +93,6 @@ function findPlace() {
     max-width: 320px;
     font-size: 15px;
   }
-}
+}const voices = speechSynthesis.getVoices();
+const utter = new SpeechSynthesisUtterance(text);
+utter.voice = voices.find(v => v.lang.startsWith("en") && v.name.includes("Google")) || voices[0];
