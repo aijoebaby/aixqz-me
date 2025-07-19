@@ -31,5 +31,9 @@
       navigator.serviceWorker.register('./service-worker.js').catch(console.error);
     }
   </script>
-</body>
+</body><script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./service-worker.js").catch(console.error);
+  }
+</script>
 </html>
