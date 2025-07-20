@@ -1,98 +1,75 @@
-function startVoice() {
-  alert("Voice assistant is not active yet.");
-}
-function fetchBibleVerse() {
-  alert("Today's verse: 'Be strong and courageous.'");
-}
-function getLocation() {
-  navigator.geolocation.getCurrentPosition((pos) => {
-    alert("Your location: " + pos.coords.latitude + ", " + pos.coords.longitude);
-  });
-}
-function callEmergency() {
-  alert("Dialing 911 (simulated).");
-}
-function playMusic() {
-  alert("Playing music (not implemented).");
-}
-function fetchWeather() {
-  alert("Weather feature not set up.");
-}
-function trackMood() {
-  alert("Tracking mood (future feature).");
-}
-function manageList() {
-  alert("List management coming soon.");
-}async function askAI() {
-  const promptText = prompt("What do you want to ask Joey?");
-  if (!promptText) return;const data = await res.json();
-if(data.reply) {
-  // 🗣️ Speak first
-  if ("speechSynthesis" in window) {
-    const utter = new SpeechSynthesisUtterance(data.reply);
-    utter.lang = "en-US";       // adjust voice as needed
+
+
+/* ---------- helper: speak text if available ---------- */
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+
+  function _speak() {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'en-US';
     speechSynthesis.speak(utter);
   }
-  // Show text after we start speaking
-  alert("Joey says:\n\n" + data.reply);
+
+  if (speechSynthesis.getVoices().length === 0) {
+    speechSynthesis.addEventListener('voiceschanged', _speak, { once: true });
+  } else {
+    _speak();
+  }
 }
 
-  // --- speech-synthesis block ---
-  if ('speechSynthesis' in window) {
-    const utter = new Speech
-}// --- Ask AI (Joey) ---
+/* ---------- Ask AI (Joey) ---------- */
 async function askAI() {
-  const promptText = prompt("What do you want to ask Joey?");
+  const promptText = prompt('What do you want to ask Joey?');
   if (!promptText) return;
 
   try {
-    const res = await fetch("/.netlify/functions/askAI", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch('/.netlify/functions/askAI', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: promptText })
     });
 
     const data = await res.json();
 
     if (data.reply) {
-      // Show Joey's reply
-      alert("Joey says:\n\n" + data.reply);
-
-      // Optional: speak reply aloud
-      if ("speechSynthesis" in window) {
-        const utter = new SpeechSynthesisUtterance(data.reply);
-        utter.lang = "en-US";
-        speechSynthesis.speak(utter);
-      }
-    } else if (data.error) {
-      alert("Joey had trouble: " + data.error);
+      speak(data.reply);                       // 🗣️ speak first
+      alert('Joey says:\n\n' + data.reply);  // 📝 then show alert
     } else {
-      alert("No response from Joey.");
+      alert('Joey had trouble: ' + (data.error || 'No response'));
     }
   } catch (err) {
-    alert("Network error talking to Joey: " + err);
+    alert('Network error talking to Joey:\n' + err);
   }
 }
 
-   
-function tellJoke() {
-  alert("Why did the AI cross the road? To optimize the chicken!");
-}
-function fixSomething() {
-  alert("Help me fix something - coming soon.");
-}
-function findPlace() {
-  alert("Finding nearby place - coming soon.");
-}/* Mobile tweaks */
-@media (max-width: 480px) {
-  h1 {
-    font-size: 1.4rem;
+/* ---------- Bible Verse ---------- */
+async function fetchBibleVerse() {
+  try {
+    const res = await fetch('https://beta.ourmanna.com/api/v1/get/?format=json&order=daily');
+    if (!res.ok) throw new Error('Verse API error ' + res.status);
+    const j   = await res.json();
+    const text= j?.verse?.details?.text?.trim()      || '(no verse)';
+    const ref = j?.verse?.details?.reference?.trim() || '(ref?)';
+    alert(ref + '\n\n' + text);
+  } catch (err) {
+    try {
+      const fb = await fetch('https://bible-api.com/John%203:16?translation=kjv');
+      const d  = await fb.json();
+      alert('[Fallback] ' + d.reference + '\n\n' + d.text.trim());
+    } catch {
+      alert('Sorry, couldn\'t load a verse now.');
+    }
   }
-  button {
-    width: 90%;
-    max-width: 320px;
-    font-size: 15px;
-  }
-}const voices = speechSynthesis.getVoices();
-const utter = new SpeechSynthesisUtterance(text);
-utter.voice = voices.find(v => v.lang.startsWith("en") && v.name.includes("Google")) || voices[0];
+}
+
+/* ---------- Other button placeholders ---------- */
+function startVoice()      { alert('Voice feature coming soon!'); }
+function getLocation()     { navigator.geolocation?.getCurrentPosition(p => alert(`Lat ${p.coords.latitude}\nLon ${p.coords.longitude}`), e=>alert(e.message)); }
+function callEmergency()   { alert('Dialing 911 (simulated).'); }
+function playMusic()       { window.open('https://www.youtube.com/results?search_query=lofi+hip+hop', '_blank'); }
+function fetchWeather()    { alert('Weather feature coming soon!'); }
+function trackMood()       { alert('Mood tracker coming soon!'); }
+function manageList()      { alert('List manager coming soon!'); }
+function tellJoke()        { alert('Why did the AI cross the road? To optimize the chicken!'); }
+function fixSomething()    { alert("Let's fix it! Feature coming soon."); }
+function findPlace()       { alert('Nearby places feature coming soon.'); }
