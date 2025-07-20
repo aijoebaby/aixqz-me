@@ -1,26 +1,30 @@
-function speak(text) {
-  if (!('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  function _speak() {
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "en-US";
-    // Prefer Google US English if available
-    const voices = speechSynthesis.getVoices();
-    utter.voice = voices.find(v => v.lang === "en-US" && v.name.includes("Google")) ||
-                  voices.find(v => v.lang.startsWith("en")) || voices[0];
-    speechSynthesis.speak(utter);
-  }
-  if (speechSynthesis.getVoices().length === 0) {
-    speechSynthesis.addEventListener("voiceschanged", _speak, { once: true });
-  } else {
-    _speak();
-  }
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIJoe Voice</title>
+  <meta name="theme-color" content="#4CAF50" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+</head>
+<body style="background-image:url('joey-bg.png');background-size:cover;background-repeat:no-repeat;text-align:center;padding-top:30px;">
+  <img src="joey-bg.png" alt="Joey" style="width:120px; margin-top:20px;" />
+  <h1>Welcome to AIJoe Voice!</h1>
 
-function askAI() {
-  const promptText = prompt("Type anything, Joey will speak it back:");
-  if (!promptText) return;
-  // Speak immediately
-  speak(promptText);
-  alert("Joey said: " + promptText);
-}
+  <button onclick="startVoice()">Talk to AIJoe</button>
+  <button onclick="fetchBibleVerse()">Daily Bible Verse</button>
+  <button onclick="getLocation()">GPS</button>
+  <button onclick="callEmergency()">Instant Help</button>
+  <button onclick="playMusic()">Music</button>
+  <button onclick="fetchWeather()">Weather</button>
+  <button onclick="trackMood()">Mood</button>
+  <button onclick="manageList()">List</button>
+  <button onclick="askAI()">Ask AI</button>
+  <button onclick="tellJoke()">Joke</button>
+  <button onclick="fixSomething()">Help Me Fix Something</button>
+  <button onclick="findPlace()">Find Nearby Place</button>
+
+  <script src="script.js"></script>
+</body>
+</html>
