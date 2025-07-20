@@ -1,4 +1,5 @@
-async function askAI() {
+<button onclick="askAI()">Ask AI</button>
+ function askAI() {
   const promptText = prompt("What do you want to ask Joey?");
   if (!promptText) return;
 
