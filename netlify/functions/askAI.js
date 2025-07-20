@@ -1,4 +1,5 @@
-/function speak(text) {
+netlify/functions/askAI.js   ← (new file)
+function speak(text) {
   if (!("speechSynthesis" in window)) return;  // browser unsupported
 
   function _speak() {
