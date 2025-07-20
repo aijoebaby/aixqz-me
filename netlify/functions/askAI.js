@@ -1,4 +1,13 @@
-netlify/functions/askAI.js   ← (new file)
+if (data.reply) {
+  alert("Joey says:\n\n" + data.reply);
+  // basic speech synthesis
+  if ('speechSynthesis' in window) {
+    const utter = new SpeechSynthesisUtterance(data.reply);
+    utter.lang = "en-US";
+    speechSynthesis.speak(utter);
+  }
+}
+/functions/askAI.js   ← (new file)
 function speak(text) {
   if (!("speechSynthesis" in window)) return;  // browser unsupported
 
