@@ -1,4 +1,3 @@
-
   } catch (err) {
     alert('Network error talking to Joey:\n' + err);
   }
