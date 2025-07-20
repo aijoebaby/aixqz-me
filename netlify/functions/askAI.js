@@ -1,102 +1,28 @@
-if (data.reply) {
-  alert("Joey says:\n\n" + data.reply);
-  // basic speech synthesis
-  if ('speechSynthesis' in window) {
-    const utter = new SpeechSynthesisUtterance(data.reply);
-    utter.lang = "en-US";
-    speechSynthesis.speak(utter);
-  }
-}
-/functions/askAI.js   ← (new file)
-function speak(text) {
-  if (!("speechSynthesis" in window)) return;  // browser unsupported
+async function askAI() {
+  const promptText = prompt("What do you want to ask Joey?");
+  if (!promptText) return;
 
-  function _speak() {
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "en-US";
-    speechSynthesis.speak(utter);
-  }
-
-  // If voices are not yet loaded, wait for them
-  if (speechSynthesis.getVoices().length === 0) {
-    window.speechSynthesis.addEventListener("voiceschanged", _speak, { once: true });
-  } else {
-    _speak();
-  }
-}
-
-/* --- inside askAI success block --- */
-if (data.reply) {
-  speak(data.reply);               // 🔈 speaks first
-  alert("Joey says:\n\n" + data.reply);
-}
-netlify/functions/askAI.js
-
-const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-
-exports.handler = async function (event) {
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: "Method Not Allowed. Use POST." }),
-    };
-  }
-
-  const prompt = validatePrompt(event.body);
-  if (!prompt) {
-    return { statusCode: 400, body: JSON.stringify({ error: "Invalid or missing prompt." }) };
-  }
-
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "API key is missing from environment variables." }),
-    };
-  }
-
-  const payload = buildPayload(prompt);
-
+  // Keep speech permission alive
+  speak("Joey is thinking...");
+  
   try {
-    const resp = await fetch(OPENAI_URL, {
+    const res = await fetch("/.netlify/functions/askAI", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: promptText })
     });
+    const data = await res.json();
 
-    if (!resp.ok) {
-      return {
-        statusCode: resp.status,
-        body: JSON.stringify({ error: `OpenAI API error: ${await resp.text()}` }),
-      };
-    }
-
-    const data = await resp.json();
-    return { statusCode: 200, body: JSON.stringify({ reply: data.choices[0].message.content.trim() }) };
+    // Wait a moment to let browser keep speech permission
+    setTimeout(() => {
+      if (data.reply) {
+        speak(data.reply);
+        alert("Joey says:\n\n" + data.reply);
+      } else {
+        alert("Joey had trouble: " + (data.error || "No response"));
+      }
+    }, 200);
   } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+    alert("Network error talking to Joey:\n" + err);
   }
-};
-
-function validatePrompt(body) {
-  try {
-    return (JSON.parse(body || "{}").prompt || "").trim();
-  } catch {
-    return null;
-  }
-}
-
-function buildPayload(prompt) {
-  return {
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: "You are Joey, a friendly helper dog." },
-      { role: "user", content: prompt },
-    ],
-    max_tokens: 256,
-    temperature: 0.7,
-  };
 }
