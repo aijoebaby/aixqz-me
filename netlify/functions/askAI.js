@@ -1,29 +1,20 @@
-async console.log("askAI raw data:", data);
- askAI() {
-  const promptText = prompt("What do you want to ask Joey?");
-  if (!promptText) return;
-
-  // Keep speech permission alive
-  speak("Joey is thinking...");
-  
+// netlify/functions/askAI.js
+export async function handler(event) {
   try {
-    const res = await fetch("/.netlify/functions/askAI", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: promptText })
-    });
-    const data = await res.json();
+    const { prompt } = JSON.parse(event.body || '{}');
 
-    // Wait a moment to let browser keep speech permission
-    setTimeout(() => {
-      if (data.reply) {
-        speak(data.reply);
-        alert("Joey says:\n\n" + data.reply);
-      } else {
-        alert("Joey had trouble: " + (data.error || "No response"));
-      }
-    }, 200);
-  } catch (err) {
-    alert("Network error talking to Joey:\n" + err);
+    if (!prompt) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'No prompt' }) };
+    }
+
+    // Call OpenAI (or whatever) here. Example placeholder:
+    const reply = "Hello from Joey! You asked: " + prompt;
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ reply })
+    };
+  } catch (e) {
+    return { statusCode: 500, body: JSON.stringify({ error: e.message }) };
   }
 }
