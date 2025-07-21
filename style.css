@@ -1,81 +1,77 @@
-/* CSS Variables for easy theming */
+/* VARIABLES */
 :root {
-  --primary-color: #4caf50;
-  --primary-hover: #45a049;
-  --background: #f0f8ff;
-  --text-color: #222;
-  --button-radius: 5px;
-  --font-stack: Arial, Helvetica, sans-serif;
-  --spacing: 1.5rem;
+  --primary: #4CAF50;
+  --on-primary: #fff;
+  --bg-overlay: rgba(0,0,0,0.4);
+  --radius: 8px;
+  --gap: 1rem;
+  --font: 'Segoe UI', sans-serif;
 }
 
-/* Reset some default browser styles */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-/* Body styles */
+/* RESET & BODY */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  background-color: var(--background);
-  color: var(--text-color);
-  font-family: var(--font-stack);
-  padding: var(--spacing);
+  font-family: var(--font);
+  color: var(--on-primary);
+  background: url('joey-bg.png') center/cover no-repeat;
+  position: relative;
   min-height: 100vh;
-  text-align: center;
-  line-height: 1.5;
+}
+body::before {
+  content: '';
+  position: absolute; top:0; left:0; right:0; bottom:0;
+  background: var(--bg-overlay);
+  z-index: 0;
 }
 
-/* Buttons */
-button {
-  background-color: var(--primary-color);
-  color: #fff;
+/* CONTENT WRAPPER */
+img, h1, .controls {
+  position: relative;
+  z-index: 1;
+}
+img {
+  width: 120px;
+  border-radius: 50%;
+  margin: 2rem auto 1rem;
+  display: block;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+}
+
+/* BUTTON GRID */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--gap);
+  padding: 0 1rem;
+}
+.controls button {
+  background: var(--primary);
+  color: var(--on-primary);
   border: none;
-  border-radius: var(--button-radius);
-  padding: 0.75em 1.5em;
-  margin: 0.5em;
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.3s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.controls button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.4);
 }
 
-button:hover,
-button:focus {
-  background-color: var(--primary-hover);
-  outline: 2px solid var(--primary-hover);
-  outline-offset: 2px;
-}
-
-/* Responsive text and layout */
-@media (max-width: 600px) {
-  body {
-    padding: 0.5rem;
-    font-size: 0.95rem;
+/* RESPONSIVE TOUCH-TARGET */
+@media (max-width: 480px) {
+  .controls button {
+    flex: 1 1 100%;
+    max-width: 100%;
+    font-size: 1.1rem;
   }
-
-  button {
-    width: 100%;
-    box-sizing: border-box;
-    font-size: 1em;
-    padding: 1em;
-  }
-}
-
-/* Example for other common elements */
-h1, h2, h3, h4, h5, h6 {
-  margin-bottom: 0.75em;
-  font-weight: 700;
-}
-
-a {
-  color: var(--primary-color);
-  text-decoration: none;
-  transition: text-decoration 0.2s;
-}
-a:hover,
-a:focus {
-  text-decoration: underline;
 }
