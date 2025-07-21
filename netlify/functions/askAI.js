@@ -1,4 +1,5 @@
-async function askAI() {
+async console.log("askAI raw data:", data);
+ askAI() {
   const promptText = prompt("What do you want to ask Joey?");
   if (!promptText) return;
 
