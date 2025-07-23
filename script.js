@@ -1,4 +1,8 @@
-// ===============================
+// ===async function askAI() {
+  console.log("askAI() fired");
+  const q = prompt("What do you want to ask Joey?");
+  …
+===========================
 // AIJOE VOICE — script.js v2.3
 // ===============================
 
