@@ -31,8 +31,10 @@ function speak(text) {
 }
 
 // 3️⃣ Utility to show AI response in-page
-function displayAIResponse(text) {
-  let c = document.getElementById("ai-output");
+function startVoice() {
+  console.log("startVoice → calling askAI"); 
+  askAI();
+}
   if (!c) {
     c = document.createElement("div");
     c.id = "ai-output";
