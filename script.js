@@ -1,101 +1,40 @@
-// ===============================
-// AIJOE VOICE — script.js  v1.4
-// ===============================
-
-// --- Speech helper: waits for voices, picks a Google voice if available ---
-function speak(text) {
-  if (!('speechSynthesis' in window)) return;
-  speechSynthesis.cancel(); // Cancel any queued speech
-
-  function _speak() {
-    const utter = new SpeechSynthesisUtterance(text);
-    const voices = speechSynthesis.getVoices();
-    utter.lang = "en-US";
-    // Prefer Google US English (Android/Chrome)
-    utter.voice = voices.find(v => v.lang === "en-US" && v.name.includes("Google")) ||
-                  voices.find(v => v.lang.startsWith("en")) || voices[0];
-    speechSynthesis.speak(utter);
-  }
-  if (speechSynthesis.getVoices().length === 0) {
-    speechSynthesis.addEventListener("voiceschanged", _speak, { once: true });
-  } else {
-    _speak();
-  }
-}<script async src="https://widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js"></script>
-<script>
-  window.addEventListener('DOMContentLoaded', () => {
-    const el = document.getElementById('trustpilot-widget');
-    if (el && window.Trustpilot && Trustpilot.loadFromElement) {
-      Trustpilot.loadFromElement(el);
-    }
-  });
-</script>
-
-// --- Main AI button ---
 async function askAI() {
-  const promptText = prompt("What do you want to ask Joey?");
-  if (!promptText) return;
-<div id="trustpilot-widget"
-     class="trustpilot-widget"
-     data-businessunit-id="YOUR_BUSINESS_ID"
-     data-template-id="YOUR_TEMPLATE_ID"
-     data-style-height="50px"
-     data-style-width="100%">
-</div>
+  const input = document.getElementById('askai-input');
+  const userText = input ? input.value : '';
+  setStatus("Joey is thinking...");
+
   try {
-    const res = await fetch("/.netlify/functions/askAI", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: promptText })
+    const res = await fetch('/.netlify/functions/askAI', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: userText })
     });
-
     const data = await res.json();
-    if (data.reply) {
-      speak(data.reply); // Speak first
-      alert("Joey says:\n\n" + data.reply); // Then alert
-    } else {
-      alert("Joey had trouble: " + (data.error || "No response"));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+    setStatus("");
+    showAnswer(data.reply);
+    // Text-to-speech
+    if ('speechSynthesis' in window) {
+      const utter = new SpeechSynthesisUtterance(data.reply);
+      utter.rate = 1;
+      window.speechSynthesis.speak(utter);
     }
   } catch (err) {
-    alert("Network error talking to Joey:\n" + err);
+    console.error("Front-end error:", err);
+    setStatus("Error: " + err.message);
   }
 }
 
-// --- Bible Verse button ---
-async function fetchBibleVerse() {
-  try {
-    const res = await fetch("https://beta.ourmanna.com/api/v1/get/?format=json&order=daily");
-    if (!res.ok) throw new Error("Verse API error " + res.status);
-    const j   = await res.json();
-    const text= j?.verse?.details?.text?.trim()      || "(no verse)";
-    const ref = j?.verse?.details?.reference?.trim() || "(reference?)";
-    alert(ref + "\n\n" + text);
-  } catch (err) {
-    // fallback
-    try {
-      const fb = await fetch("https://bible-api.com/John%203:16?translation=kjv");
-      const d  = await fb.json();
-      alert("[Fallback] " + d.reference + "\n\n" + d.text.trim());
-    } catch {
-      alert("Sorry, couldn't load a verse right now.");
-    }
-  }
-}
+// Attach to button (make sure your button has id="askai-btn")
+document.getElementById('askai-btn').addEventListener('click', askAI);
 
-// --- Other buttons ---
-function startVoice()      { alert("Voice feature coming soon!"); }
-function getLocation()     { 
-  if (!navigator.geolocation) { alert("Geolocation not supported."); return; }
-  navigator.geolocation.getCurrentPosition(
-    p => alert(`Latitude: ${p.coords.latitude}\nLongitude: ${p.coords.longitude}`), 
-    e => alert(e.message)
-  );
+// Helper functions
+function setStatus(msg) {
+  const statusEl = document.getElementById('status');
+  if (statusEl) statusEl.textContent = msg;
 }
-function callEmergency()   { alert("Dialing 911 (simulated)."); }
-function playMusic()       { window.open("https://www.youtube.com/results?search_query=lofi+hip+hop", "_blank"); }
-function fetchWeather()    { alert("Weather feature coming soon!"); }
-function trackMood()       { alert("Mood tracker coming soon!"); }
-function manageList()      { alert("List manager coming soon!"); }
-function tellJoke()        { alert("Why did the AI cross the road? To optimize the chicken!"); }
-function fixSomething()    { alert("Let's fix it! Feature coming soon."); }
-function findPlace()       { alert("Nearby places feature coming soon."); }
+function showAnswer(text) {
+  const answerEl = document.getElementById('answer');
+  if (answerEl) answerEl.textContent = text;
+}
