@@ -55,4 +55,12 @@
      data-style-height="50px"
      data-style-width="100%">
 </div>
-</html>
+</html><script async src="https://widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('trustpilot-widget');
+    if (el && window.Trustpilot && Trustpilot.loadFromElement) {
+      Trustpilot.loadFromElement(el);
+    }
+  });
+</script>
