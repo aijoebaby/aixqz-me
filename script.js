@@ -4,38 +4,24 @@
 
 // ——— Preload voices on page load ———
 window.addEventListener("load", () => {
-  if ("speechSynthesis" in window) {
-    // This forces the browser to load available voices early.
-    window.speechSynthesis.getVoices();
-  }
-});
-
-// ——— Speech helper — priming & speaking reliably ———
-function speak(text) {
-  if (!("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel(); // clear any queued utterances
-
-  function _speak() {
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "en-US";
-    const voices = speechSynthesis.getVoices();
-    // Prefer a Google US English voice if available
-    utter.voice =
-      voices.find((v) => v.lang === "en-US" && v.name.includes("Google")) ||
-      voices.find((v) => v.lang.startsWith("en")) ||
-      voices[0];
-    speechSynthesis.speak(utter);
-  }
-
-  // Wait for voices to be loaded if not already
-  if (speechSynthesis.getVoices().length === 0) {
-    speechSynthesis.addEventListener("voiceschanged", _speak, { once: true });
-  } else {
-    _speak();
+ async function askAI() {
+  const userText = document.getElementById('askai-input').value;
+  setStatus("Joey is thinking...");
+  try {
+    const res = await fetch('/.netlify/functions/askAI', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: userText })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    setStatus(""); // clear status
+    showAnswer(data.reply);
+    speakText(data.reply); // text-to-speech function
+  } catch (err) {
+    setStatus("Error: " + err.message);
   }
 }
-
-// ——— Ask AI with voice + alert ———
 async function askAI() {
   const promptText = prompt("What do you want to ask Joey?");
   if (!promptText) return;
