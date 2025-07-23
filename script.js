@@ -21,7 +21,15 @@ function speak(text) {
   } else {
     _speak();
   }
-}
+}<script async src="https://widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('trustpilot-widget');
+    if (el && window.Trustpilot && Trustpilot.loadFromElement) {
+      Trustpilot.loadFromElement(el);
+    }
+  });
+</script>
 
 // --- Main AI button ---
 async function askAI() {
