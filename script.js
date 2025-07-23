@@ -27,7 +27,13 @@ function speak(text) {
 async function askAI() {
   const promptText = prompt("What do you want to ask Joey?");
   if (!promptText) return;
-
+<div id="trustpilot-widget"
+     class="trustpilot-widget"
+     data-businessunit-id="YOUR_BUSINESS_ID"
+     data-template-id="YOUR_TEMPLATE_ID"
+     data-style-height="50px"
+     data-style-width="100%">
+</div>
   try {
     const res = await fetch("/.netlify/functions/askAI", {
       method: "POST",
