@@ -1,0 +1,7 @@
+function speakText(text) {
+  if ('speechSynthesis' in window) {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 1;
+    window.speechSynthesis.speak(utter);
+  }
+}
