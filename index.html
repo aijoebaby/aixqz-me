@@ -9,14 +9,15 @@
   <link rel="manifest" href="manifest.json" />
 </head>
 <body>
-
-  <!-- Background & Avatar -->
+  <!-- Background overlay -->
   <div class="overlay"></div>
-  <img src="joey-bg.png" alt="Joey" class="avatar" />
+
+  <!-- Avatar & Title -->
+  <img src="joey-bg.png" alt="Joey Avatar" class="avatar" />
   <h1>Welcome to AIJoe Voice!</h1>
 
-  <!-- Controls -->
-  <div class="controls"><div id="ai-output"></div>
+  <!-- Main Controls -->
+  <div class="controls">
     <button onclick="startVoice()">Talk to AIJoe</button>
     <button onclick="fetchBibleVerse()">Daily Bible Verse</button>
     <button onclick="getLocation()">GPS</button>
@@ -31,16 +32,19 @@
     <button onclick="findPlace()">Find Nearby Place</button>
   </div>
 
-  <!-- Mood Tracker UI -->
-  <section id="mood-section" class="feature-section hidden">
+  <!-- AI Response Output -->
+  <div id="ai-output"></div>
+
+  <!-- Mood Tracker Section -->
+  <section id="mood-section" class="feature-section">
     <h2>Mood Tracker</h2>
     <input id="mood-input" placeholder="How are you feeling today?" />
     <button id="mood-submit">Submit Mood</button>
     <ul id="mood-list"></ul>
   </section>
 
-  <!-- List Manager UI -->
-  <section id="list-section" class="feature-section hidden">
+  <!-- List Manager Section -->
+  <section id="list-section" class="feature-section">
     <h2>List Manager</h2>
     <input id="list-input" placeholder="Add a new item" />
     <button id="list-add">Add Item</button>
@@ -48,19 +52,5 @@
   </section>
 
   <script src="script.js"></script>
-</body><div id="trustpilot-widget"
-     class="trustpilot-widget"
-     data-businessunit-id="YOUR_BUSINESS_ID"
-     data-template-id="YOUR_TEMPLATE_ID"
-     data-style-height="50px"
-     data-style-width="100%">
-</div>
-</html><script async src="https://widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js"></script>
-<script>
-  window.addEventListener('DOMContentLoaded', () => {
-    const el = document.getElementById('trustpilot-widget');
-    if (el && window.Trustpilot && Trustpilot.loadFromElement) {
-      Trustpilot.loadFromElement(el);
-    }
-  });
-</script>
+</body>
+</html>
