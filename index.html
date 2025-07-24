@@ -12,6 +12,7 @@
   <div class="overlay"></div>
   <img src="joey-bg.png" alt="Joey Avatar" class="avatar" />
   <h1>Welcome to AIJoe Voice!</h1>
+
   <div class="controls">
     <button onclick="startVoice()">Talk to AIJoe</button>
     <button onclick="fetchBibleVerse()">Daily Bible Verse</button>
@@ -26,19 +27,23 @@
     <button onclick="fixSomething()">Help Me Fix Something</button>
     <button onclick="findPlace()">Find Nearby Place</button>
   </div>
+
   <div id="ai-output"></div>
+
   <section id="mood-section" class="feature-section">
     <h2>Mood Tracker</h2>
     <input id="mood-input" placeholder="How are you feeling today?" />
     <button id="mood-submit">Submit Mood</button>
     <ul id="mood-list"></ul>
   </section>
+
   <section id="list-section" class="feature-section">
     <h2>List Manager</h2>
     <input id="list-input" placeholder="Add a new item" />
     <button id="list-add">Add Item</button>
     <ul id="list-items"></ul>
   </section>
+
   <script src="script.js"></script>
 </body>
 </html>
