@@ -81,39 +81,41 @@ function startVoice() {
 
 // 6️⃣ // ——— Daily Bible Verse — robust + voice ———
 async function fetchBibleVerse() {
-  // Let the user know we’re loading
+  // let them know we’re loading
   displayAIResponse("Loading today’s Bible verse…");
   speak("Fetching your daily Bible verse.");
 
   try {
-    const res = await fetch("https://beta.ourmanna.com/api/v1/get/?format=json&order=daily");
+    const res = await fetch(
+      "https://beta.ourmanna.com/api/v1/get/?format=json&order=daily"
+    );
     if (!res.ok) throw new Error("API status " + res.status);
-    const json = await res.json();
+    const {
+      verse: {
+        details: { text, reference },
+      },
+    } = await res.json();
 
-    // Extract text & reference
-    const text = json.verse.details.text.trim();
-    const ref  = json.verse.details.reference.trim();
-    const full = `${ref}\n\n${text}`;
-
-    // Speak & display
+    const full = `${reference.trim()}\n\n${text.trim()}`;
     speak(full);
     displayAIResponse(full);
 
   } catch (err) {
-    // Fallback to John 3:16 if OurManna fails
+    // fallback to John 3:16
     try {
-      const fb = await fetch("https://bible-api.com/John%203:16?translation=kjv");
+      const fb = await fetch(
+        "https://bible-api.com/John%203:16?translation=kjv"
+      );
       const data = await fb.json();
       const fallback = `[Fallback] ${data.reference}\n\n${data.text.trim()}`;
       speak(fallback);
       displayAIResponse(fallback);
     } catch {
       const msg = "Sorry, could not load a verse right now.";
-      displayAIResponse(msg);
       speak(msg);
+      displayAIResponse(msg);
     }
-  }
-}
+ 
  Bible Verse
  // 7️⃣ Weather (replace YOUR_OPENWEATHERMAP_KEY)
 function fetchWeather() {
