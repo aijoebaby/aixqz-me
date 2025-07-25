@@ -256,6 +256,29 @@ function getLocation() {
 }
 function callEmergency() { displayAIResponse("911 simulated."); }
 function playMusic() { window.open("https://www.youtube.com/results?search_query=lofi+hip+hop"); }
-function tellJoke() { displayAIResponse("Why did the AI cross the road? To optimize the chicken!"); }
+// ——— Daily Joke — new one each day ———
+async function tellJoke() {
+  const today = new Date().toISOString().split("T")[0];
+  let joke = localStorage.getItem("jokeText");
+  const storedDate = localStorage.getItem("jokeDate");
+
+  if (storedDate !== today || !joke) {
+    // need a new joke for today
+    try {
+      const res = await fetch("https://official-joke-api.appspot.com/random_joke");
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      joke = `${data.setup} … ${data.punchline}`;
+    } catch {
+      joke = "Why did the AI cross the road? To optimize the chicken!";
+    }
+    localStorage.setItem("jokeDate", today);
+    localStorage.setItem("jokeText", joke);
+  }
+
+  // show and speak it
+  displayAIResponse(joke);
+  speak(joke);
+}
 function fixSomething() { displayAIResponse("Help coming soon."); }
 function findPlace() { displayAIResponse("Nearby places soon."); }
