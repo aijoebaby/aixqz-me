@@ -80,21 +80,47 @@ function startVoice() {
 }
 
 // 6️⃣ Daily Bible Verse
+// ——— Daily Bible Verse — robust + voice ———
 async function fetchBibleVerse() {
+  // let them know we’re loading
+  displayAIResponse("Loading today’s Bible verse…");
+  speak("Fetching your daily Bible verse.");
+
   try {
-    const r = await fetch(
+    const res = await fetch(
       "https://beta.ourmanna.com/api/v1/get/?format=json&order=daily"
     );
-    if (!r.ok) throw new Error(r.status);
-    const j = await r.json();
-    const t = j.verse.details.text.trim(),
-      ref = j.verse.details.reference;
-    displayAIResponse(ref + "\n\n" + t);
-  } catch {
-    displayAIResponse("Couldn’t load verse.");
+    if (!res.ok) throw new Error("API status " + res.status);
+    const {
+      verse: {
+        details: { text, reference },
+      },
+    } = await res.json();
+
+    const full = `${reference.trim()}\n\n${text.trim()}`;
+    speak(full);
+    displayAIResponse(full);
+
+  } catch (err) {
+    // fallback to John 3:16
+    try {
+      const fb = await fetch(
+        "https://bible-api.com/John%203:16?translation=kjv"
+      );
+      const data = await fb.json();
+      const fallback = `[Fallback] ${data.reference}\n\n${data.text.trim()}`;
+      speak(fallback);
+      displayAIResponse(fallback);
+    } catch {
+      const msg = "Sorry, could not load a verse right now.";
+      speak(msg);
+      displayAIResponse(msg);
+    }
   }
 }
-
+  
+        
+  
 // 7️⃣ Weather (replace YOUR_OPENWEATHERMAP_KEY)
 function fetchWeather() {
   if (!navigator.geolocation) {
