@@ -225,7 +225,35 @@ function toggleSection(id) {
 }
 
 // 1️⃣1️⃣ Placeholders
-function getLocation() { displayAIResponse("Use the GPS button."); }
+// ——— Real Geolocation for GPS button ———
+function getLocation() {
+  if (!navigator.geolocation) {
+    const msg = "Geolocation not supported by your browser.";
+    displayAIResponse(msg);
+    speak(msg);
+    return;
+  }
+
+  // Inform the user
+  displayAIResponse("Locating your position…");
+  speak("Finding your location now.");
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      // Round coords for readability
+      const lat = pos.coords.latitude.toFixed(5);
+      const lon = pos.coords.longitude.toFixed(5);
+      const message = `Your location is Latitude: ${lat}, Longitude: ${lon}.`;
+      displayAIResponse(message);
+      speak(message);
+    },
+    (err) => {
+      const errorMsg = `Error getting location: ${err.message}`;
+      displayAIResponse(errorMsg);
+      speak(`Unable to get your location: ${err.message}`);
+    }
+  );
+}
 function callEmergency() { displayAIResponse("911 simulated."); }
 function playMusic() { window.open("https://www.youtube.com/results?search_query=lofi+hip+hop"); }
 function tellJoke() { displayAIResponse("Why did the AI cross the road? To optimize the chicken!"); }
