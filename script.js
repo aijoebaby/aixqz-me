@@ -256,7 +256,7 @@ function getLocation() {
 }
 function callEmergency() { displayAIResponse("911 simulated."); }
 function playMusic() { window.open("https://www.youtube.com/results?search_query=lofi+hip+hop"); }
-// ——— Daily Joke — new one each day ———
+// ——— Daily Joke — new one each day ———tellJoke: fetch new joke daily
 async function tellJoke() {
   const today = new Date().toISOString().split("T")[0];
   let joke = localStorage.getItem("jokeText");
