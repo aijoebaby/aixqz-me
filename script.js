@@ -225,7 +225,7 @@ function toggleSection(id) {
 }
 
 // 1️⃣1️⃣ Placeholders
-// ——— Real Geolocation for GPS button ———
+// ——— Real Geolocation for GPS button ———Implement real geolocation in getLocation()
 function getLocation() {
   if (!navigator.geolocation) {
     const msg = "Geolocation not supported by your browser.";
