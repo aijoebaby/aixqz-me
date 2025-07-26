@@ -1,4 +1,4 @@
-// AIJoe Voice — script.js v3.0
+// script.js — updated to v3.1
 
 // 1️⃣ Preload voices
 window.addEventListener("load", () =>
@@ -20,9 +20,7 @@ function speak(text) {
     speechSynthesis.speak(u);
   }
   if (!speechSynthesis.getVoices().length) {
-    speechSynthesis.addEventListener("voiceschanged", _speak, {
-      once: true,
-    });
+    speechSynthesis.addEventListener("voiceschanged", _speak, { once: true });
   } else {
     _speak();
   }
@@ -51,11 +49,34 @@ function displayAIResponse(text) {
   box.textContent = text;
 }
 
-// 4️⃣ Ask AI
-async function askAI() {
-  const q = prompt("What do you want to ask Joey?");
+// 4️⃣ Talk to AIJoe — uses voice recognition if available
+function startVoice() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    return askAI(); // text fallback
+  }
+  const recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  speak("Listening...");
+  recognition.start();
+  recognition.onresult = (e) => {
+    recognition.stop();
+    const transcript = e.results[0][0].transcript;
+    displayAIResponse(`You said: "${transcript}"`);
+    askAI(transcript);
+  };
+  recognition.onerror = () => {
+    displayAIResponse("Speech recognition error.");
+    speak("Sorry, I didn’t catch that.");
+  };
+}
+
+// 5️⃣ Ask AI (accepts optional spoken query)
+async function askAI(query) {
+  const q = query || prompt("What do you want to ask Joey?");
   if (!q) return;
   speak("Joey is thinking...");
+  displayAIResponse("Thinking...");
   try {
     const res = await fetch("/.netlify/functions/askAI", {
       method: "POST",
@@ -64,88 +85,75 @@ async function askAI() {
     });
     const data = await res.json();
     if (data.reply) {
-      setTimeout(() => speak(data.reply), 300);
       displayAIResponse("Joey says: " + data.reply);
+      setTimeout(() => speak(data.reply), 300);
     } else {
       displayAIResponse("Error: " + (data.error || "No response"));
+      speak("I ran into an error.");
     }
   } catch (err) {
     displayAIResponse("Network error: " + err.message);
+    speak("Network error occurred.");
   }
-}
-
-// 5️⃣ Hook “Talk to AIJoe” to askAI()
-function startVoice() {
-  askAI();
 }
 
 // 6️⃣ Daily Bible Verse
-// ——— Daily Bible Verse — robust + voice ———
 async function fetchBibleVerse() {
-  // let them know we’re loading
   displayAIResponse("Loading today’s Bible verse…");
   speak("Fetching your daily Bible verse.");
-
   try {
-    const res = await fetch(
-      "https://beta.ourmanna.com/api/v1/get/?format=json&order=daily"
-    );
+    const res = await fetch("https://beta.ourmanna.com/api/v1/get/?format=json&order=daily");
     if (!res.ok) throw new Error("API status " + res.status);
-    const {
-      verse: {
-        details: { text, reference },
-      },
-    } = await res.json();
-
+    const { verse: { details: { text, reference } } } = await res.json();
     const full = `${reference.trim()}\n\n${text.trim()}`;
-    speak(full);
     displayAIResponse(full);
-
-  } catch (err) {
-    // fallback to John 3:16
+    speak(full);
+  } catch {
     try {
-      const fb = await fetch(
-        "https://bible-api.com/John%203:16?translation=kjv"
-      );
+      const fb = await fetch("https://bible-api.com/John%203:16?translation=kjv");
       const data = await fb.json();
       const fallback = `[Fallback] ${data.reference}\n\n${data.text.trim()}`;
-      speak(fallback);
       displayAIResponse(fallback);
+      speak(fallback);
     } catch {
       const msg = "Sorry, could not load a verse right now.";
-      speak(msg);
       displayAIResponse(msg);
+      speak(msg);
     }
   }
 }
-  
-        
-  
-// 7️⃣ Weather (replace YOUR_OPENWEATHERMAP_KEY)
+
+// 7️⃣ Weather
 function fetchWeather() {
   if (!navigator.geolocation) {
-    displayAIResponse("Geolocation not supported.");
+    const msg = "Geolocation not supported.";
+    displayAIResponse(msg);
+    speak(msg);
     return;
   }
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
-      const lat = pos.coords.latitude,
-        lon = pos.coords.longitude;
-      const key = "YOUR_OPENWEATHERMAP_KEY";
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      displayAIResponse("Fetching weather...");
+      speak("Getting the weather now.");
       try {
-        const r = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${key}`
-        );
+        const key = "YOUR_OPENWEATHERMAP_KEY";
+        const r = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${key}`);
         if (!r.ok) throw new Error(r.status);
         const d = await r.json();
-        displayAIResponse(
-          `Weather in ${d.name}: ${d.weather[0].description}, ${d.main.temp}°F`
-        );
+        const weatherMsg = `Weather in ${d.name}: ${d.weather[0].description}, ${d.main.temp}°F`;
+        displayAIResponse(weatherMsg);
+        speak(weatherMsg);
       } catch (e) {
         displayAIResponse("Weather error: " + e.message);
+        speak("Sorry, I couldn't get the weather.");
       }
     },
-    (e) => displayAIResponse("Location error: " + e.message)
+    (e) => {
+      displayAIResponse("Location error: " + e.message);
+      speak("Sorry, I couldn't get your location for weather.");
+    }
   );
 }
 
@@ -153,6 +161,7 @@ function fetchWeather() {
 function trackMood() {
   toggleSection("mood-section");
   renderMood();
+  speak("Opening mood tracker.");
 }
 function renderMood() {
   const ul = document.getElementById("mood-list");
@@ -167,6 +176,7 @@ function renderMood() {
       arr.splice(i, 1);
       localStorage.setItem("moods", JSON.stringify(arr));
       renderMood();
+      speak("Removed mood entry.");
     };
     li.appendChild(btn);
     ul.appendChild(li);
@@ -181,12 +191,14 @@ document.getElementById("mood-submit").onclick = () => {
   localStorage.setItem("moods", JSON.stringify(arr));
   inpt.value = "";
   renderMood();
+  speak("Mood saved.");
 };
 
 // 9️⃣ List Manager
 function manageList() {
   toggleSection("list-section");
   renderList();
+  speak("Opening list manager.");
 }
 function renderList() {
   const ul = document.getElementById("list-items");
@@ -201,6 +213,7 @@ function renderList() {
       arr.splice(i, 1);
       localStorage.setItem("listItems", JSON.stringify(arr));
       renderList();
+      speak("Removed item.");
     };
     li.appendChild(btn);
     ul.appendChild(li);
@@ -215,70 +228,34 @@ document.getElementById("list-add").onclick = () => {
   localStorage.setItem("listItems", JSON.stringify(arr));
   inpt.value = "";
   renderList();
+  speak("Item added to list.");
 };
 
-// 🔟 Toggle helper
+// 🔟 Emergency Help
+function callEmergency() {
+  const msg = "Calling emergency services. Please stay calm.";
+  displayAIResponse(msg);
+  speak(msg);
+}
+
+// 1️⃣1️⃣ Find Nearby Place
+function findPlace() {
+  const msg = "Searching for nearby places.";
+  displayAIResponse(msg);
+  speak(msg);
+  // real implementation can be added later
+}
+
+// 1️⃣2️⃣ Help Me Fix Something
+function fixSomething() {
+  const msg = "Help is on the way. What do you need?";
+  displayAIResponse(msg);
+  speak(msg);
+}
+
+// ✅ Section toggle helper
 function toggleSection(id) {
   ["mood-section", "list-section"].forEach((sec) => {
     document.getElementById(sec).classList.toggle("visible", sec === id);
   });
 }
-
-// 1️⃣1️⃣ Placeholders
-// ——— Real Geolocation for GPS button ———Implement real geolocation in getLocation()
-function getLocation() {
-  if (!navigator.geolocation) {
-    const msg = "Geolocation not supported by your browser.";
-    displayAIResponse(msg);
-    speak(msg);
-    return;
-  }
-
-  // Inform the user
-  displayAIResponse("Locating your position…");
-  speak("Finding your location now.");
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      // Round coords for readability
-      const lat = pos.coords.latitude.toFixed(5);
-      const lon = pos.coords.longitude.toFixed(5);
-      const message = `Your location is Latitude: ${lat}, Longitude: ${lon}.`;
-      displayAIResponse(message);
-      speak(message);
-    },
-    (err) => {
-      const errorMsg = `Error getting location: ${err.message}`;
-      displayAIResponse(errorMsg);
-      speak(`Unable to get your location: ${err.message}`);
-    }
-  );
-}
-function callEmergency() { displayAIResponse("911 simulated."); }
-function playMusic() { window.open("https://www.youtube.com/results?search_query=lofi+hip+hop"); }
-// ——— Daily Joke — new one each day ———tellJoke: fetch new joke daily
-async function tellJoke() {
-  const today = new Date().toISOString().split("T")[0];
-  let joke = localStorage.getItem("jokeText");
-  const storedDate = localStorage.getItem("jokeDate");
-
-  if (storedDate !== today || !joke) {
-    // need a new joke for today
-    try {
-      const res = await fetch("https://official-joke-api.appspot.com/random_joke");
-      if (!res.ok) throw new Error(res.status);
-      const data = await res.json();
-      joke = `${data.setup} … ${data.punchline}`;
-    } catch {
-      joke = "Why did the AI cross the road? To optimize the chicken!";
-    }
-    localStorage.setItem("jokeDate", today);
-    localStorage.setItem("jokeText", joke);
-  }
-
-  // show and speak it
-  displayAIResponse(joke);
-  speak(joke);
-}
-function fixSomething() { displayAIResponse("Help coming soon."); }
-function findPlace() { displayAIResponse("Nearby places soon."); }
