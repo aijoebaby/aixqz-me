@@ -1,4 +1,4 @@
-/* style.css — unchanged, but included here for completeness */
+/* style.css */
 :root {
   --primary: #4CAF50;
   --on-primary: #fff;
@@ -11,13 +11,14 @@
 body { font-family: var(--font); min-height:100vh; position:relative; }
 body::before {
   content:""; position:absolute; inset:0;
-  background:url('joey-bg.png') center/cover no-repeat;
-  background-size:cover;
+  /* updated to match your actual image name */
+  background:url('joey-bg-2.png') center/cover no-repeat;
   z-index:0;
 }
 .overlay {
   position:absolute; inset:0;
-  background:var(--bg-overlay); z-index:1;
+  background:var(--bg-overlay);
+  z-index:1;
 }
 .avatar, h1, .controls, .feature-section {
   position:relative; z-index:2;
@@ -67,13 +68,12 @@ h1 {
 .feature-section li {
   background:rgba(255,255,255,0.1); padding:0.5rem;
   margin-bottom:0.25rem; border-radius:4px;
-  display:flex; justify-content:space-between;
-  align-items:center;
+  display:flex; justify-content:space-between; align-items:center;
 }
 .feature-section li button {
   background:transparent; border:none; color:#f66;
   cursor:pointer;
 }
 @media (max-width:480px) {
-  .controls button { flex:1 1 100%; max-width:100%; font-size:1.1rem;}
+  .controls button { flex:1 1 100%; max-width:100%; font-size:1.1rem; }
 }
