@@ -1,0 +1,100 @@
+package com.aijoe.life
+import android.Manifestimport android.content.Intentimport android.content.pm.PackageManagerimport android.net.Uriimport android.os.Bundleimport android.speech.RecognizerIntentimport android.widget.Toastimport androidx.activity.ComponentActivityimport androidx.activity.compose.setContentimport androidx.activity.result.contract.ActivityResultContractsimport androidx.compose.foundation.Imageimport androidx.compose.foundation.layout.*import androidx.compose.material3.*import androidx.compose.runtime.*import androidx.compose.ui.Alignmentimport androidx.compose.ui.Modifierimport androidx.compose.ui.res.painterResourceimport androidx.compose.ui.unit.dpimport androidx.core.content.ContextCompatimport com.aijoe.life.ui.theme.AIJoeLifeTheme
+class MainActivity : ComponentActivity() {    private val speechRecognizerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->        if (result.resultCode == RESULT_OK) {            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)            handleVoiceCommand(spokenText)        }    }
+private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+    if (granted) {
+        startVoiceRecognition()
+    } else {
+        Toast.makeText(this, "Microphone permission denied", Toast.LENGTH_SHORT).show()
+    }
+}
+
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContent {
+        AIJoeLifeTheme {
+            MainScreen(
+                onVoiceCommand = { startVoiceRecognition() },
+                onEmergencyCall = { makeEmergencyCall() }
+            )
+        }
+    }
+}
+
+private fun startVoiceRecognition() {
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to AIJoe...")
+        }
+        speechRecognizerLauncher.launch(intent)
+    } else {
+        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    }
+}
+
+private fun handleVoiceCommand(command: String?) {
+    when (command?.lowercase()) {
+        "bible verse" -> Toast.makeText(this, "Fetching daily Bible verse...", Toast.LENGTH_SHORT).show()
+        "weather" -> Toast.makeText(this, "Checking weather...", Toast.LENGTH_SHORT).show()
+        "joke" -> Toast.makeText(this, "Why did Joey bark? To be your AI hero!", Toast.LENGTH_SHORT).show()
+        "find place" -> Toast.makeText(this, "Finding nearby places...", Toast.LENGTH_SHORT).show()
+        "fix something" -> Toast.makeText(this, "What needs fixing?", Toast.LENGTH_SHORT).show()
+        else -> Toast.makeText(this, "Command not recognized: $command", Toast.LENGTH_SHORT).show()
+    }
+}
+
+private fun makeEmergencyCall() {
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+        val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:911"))
+        startActivity(intent)
+    } else {
+        permissionLauncher.launch(Manifest.permission.CALL_PHONE)
+    }
+}
+
+}
+@Composablefun MainScreen(onVoiceCommand: () -> Unit, onEmergencyCall: () -> Unit) {    Column(        modifier = Modifier            .fillMaxSize()            .padding(16.dp),        horizontalAlignment = Alignment.CenterHorizontally,        verticalArrangement = Arrangement.Center    ) {        // Placeholder for Joey's avatar        Image(            painter = painterResource(id = R.drawable.joey_avatar),            contentDescription = "Joey Avatar",            modifier = Modifier.size(100.dp)        )        Text(text = "Welcome to AIJoe.Life!", style = MaterialTheme.typography.headlineMedium)        Spacer(modifier = Modifier.height(16.dp))
+    // Voice Command Button
+    Button(onClick = onVoiceCommand) {
+        Text("Talk to AIJoe")
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+
+    // Feature Buttons
+    Button(onClick = { /* TODO: Fetch Bible verse */ }) {
+        Text("Daily Bible Verse")
+    }
+    Button(onClick = { /* TODO: Open GPS */ }) {
+        Text("GPS")
+    }
+    Button(onClick = onEmergencyCall) {
+        Text("Instant Help (911)")
+    }
+    Button(onClick = { /* TODO: Play music */ }) {
+        Text("Music")
+    }
+    Button(onClick = { /* TODO: Fetch weather */ }) {
+        Text("Weather")
+    }
+    Button(onClick = { /* TODO: Mood tracking */ }) {
+        Text("Mood")
+    }
+    Button(onClick = { /* TODO: Manage lists */ }) {
+        Text("List")
+    }
+    Button(onClick = { /* TODO: Ask AI */ }) {
+        Text("Ask AI")
+    }
+    Button(onClick = { /* TODO: Tell joke */ }) {
+        Text("Joke")
+    }
+    Button(onClick = { /* TODO: Fix something */ }) {
+        Text("Help Me Fix Something")
+    }
+    Button(onClick = { /* TODO: Find nearby place */ }) {
+        Text("Find Nearby Place")
+    }
+}
+
+}
