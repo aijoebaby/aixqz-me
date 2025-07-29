@@ -31,20 +31,35 @@ import { PorcupineWorkerFactory } from "@picovoice/porcupine-web-en-worker";
   };
 }
 
-// 2️⃣ Speech synthesis helper
-function speak(text) {
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'en-US';
+// 2️⃣ Speech synthesis helperfunction speak(text) {
+  if (!("speechSynthesis" in window)) return;
+
+  // If we have no voices yet, wait for them to load
   const voices = speechSynthesis.getVoices();
-  utter.voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google'))
-               || voices.find(v => v.lang.startsWith('en'))
-               || voices[0];
+  if (voices.length === 0) {
+    // Listen once for when voices become available, then retry
+    speechSynthesis.addEventListener(
+      "voiceschanged",
+      () => speak(text),
+      { once: true }
+    );
+    return;
+  }
+
+  // Cancel any ongoing speech and speak the new text
+  speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+
+  // Pick an English voice (or fallback to the first one)
+  utter.voice =
+    voices.find((v) => v.lang === "en-US") ||
+    voices.find((v) => v.lang.startsWith("en")) ||
+    voices[0];
+
   speechSynthesis.speak(utter);
 }
-
-// 3️⃣ Display AI response
+/ 3️⃣ Display AI response
 function displayAIResponse(txt) {
   let box = document.getElementById('ai-output');
   if (!box) {
