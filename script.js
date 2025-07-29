@@ -1,5 +1,33 @@
 // script.js — revised v3.1
+import { PorcupineWorkerFactory } from "@picovoice/porcupine-web-en-worker";
 
+async function initWakeWord() {
+  const worker = await PorcupineWorkerFactory.create({
+    keywordPaths: [ "/porcupine/porcupine_aijoe.ppn" ],
+    modelPath:    "/porcupine/porcupine_params.pv",
+  });
+
+  const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+  const ac     = new AudioContext();
+  const src    = ac.createMediaStreamSource(stream);
+  const proc   = ac.createScriptProcessor(512, 1, 1);
+
+  src.connect(proc);
+  proc.connect(ac.destination);
+
+  proc.onaudioprocess = ({ inputBuffer }) => {
+    worker.postMessage({ command: "process", inputFrame: inputBuffer.getChannelData(0) });
+  };
+
+  worker.onmessage = msg => {
+    if (msg.command === "ppn-keyword") {
+      console.log("Wake word detected!");
+      // …your speaker-verification or assistant launch here…
+    }
+  };
+}
+
+initWakeWord();
 // 1️⃣ Preload voices
 window.addEventListener("load", () =>
   "speechSynthesis" in window && speechSynthesis.getVoices()
