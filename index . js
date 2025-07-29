@@ -1,51 +1,53 @@
-// index.js (inside your 'functions' folder)
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIJoe Voice</title>
+  <meta name="theme-color" content="#4CAF50" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
 
-// The 'firebase-functions' library is needed to create a Cloud Function.
-const functions = require('firebase-functions');
+  <!-- Porcupine Wake-Word Engine (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@picovoice/porcupine-web-en-worker/dist/porcupine-web-en-worker.js"></script>
+  <!-- Main App Logic as ES Module -->
+  <script type="module" src="script.js"></script>
+</head>
+<body>
+  <div class="overlay"></div>
+  <img src="joey-bg.png" alt="Joey Avatar" class="avatar" />
+  <h1>Welcome to AIJoe Voice!</h1>
 
-// This line allows your function to make HTTP requests to other services
-// (like an actual AI API later, but for now it's just for setting up)
-const admin = require('firebase-admin');
-admin.initializeApp(); // Initialize Firebase Admin SDK
+  <div class="controls">
+    <button onclick="startVoice()">Talk to AIJoe</button>
+    <button onclick="fetchBibleVerse()">Daily Bible Verse</button>
+    <button onclick="getLocation()">GPS</button>
+    <button onclick="callEmergency()">Instant Help</button>
+    <button onclick="playMusic()">Music</button>
+    <button onclick="fetchWeather()">Weather</button>
+    <button onclick="trackMood()">Mood Tracker</button>
+    <button onclick="manageList()">List Manager</button>
+    <button onclick="askAI()">Ask AI</button>
+    <button onclick="tellJoke()">Joke</button>
+    <button onclick="fixSomething()">Help Me Fix Something</button>
+    <button onclick="findPlace()">Find Nearby Place</button>
+  </div>
 
-// This is your 'ask' function that will respond to the /ask endpoint.
-// It's designed to be triggered by an HTTP POST request.
-exports.ask = functions.https.onRequest(async (request, response) => {
-    // Enable CORS (Cross-Origin Resource Sharing) for local testing and deployment
-    // This allows your frontend (from Netlify) to talk to your backend (Firebase)
-    response.set('Access-Control-Allow-Origin', '*'); // Allows requests from any origin
+  <div id="ai-output"></div>
 
-    // Handle pre-flight OPTIONS request (CORS handshake)
-    if (request.method === 'OPTIONS') {
-        response.set('Access-Control-Allow-Methods', 'POST'); // Only allow POST
-        response.set('Access-Control-Allow-Headers', 'Content-Type'); // Allow Content-Type header
-        response.status(204).send(''); // Send an empty 204 OK response
-        return;
-    }
+  <section id="mood-section" class="feature-section">
+    <h2>Mood Tracker</h2>
+    <input id="mood-input" placeholder="How are you feeling today?" />
+    <button id="mood-submit">Submit Mood</button>
+    <ul id="mood-list"></ul>
+  </section>
 
-    // Ensure the request is a POST method
-    if (request.method !== 'POST') {
-        // If not POST, send a 405 Method Not Allowed error
-        return response.status(405).send('Method Not Allowed');
-    }
-
-    // Check if the request body and 'prompt' property exist
-    if (!request.body || !request.body.prompt) {
-        // If not, send a 400 Bad Request error
-        return response.status(400).send('Bad Request: Missing prompt in request body.');
-    }
-
-    // Get the user's prompt from the request body
-    const userPrompt = request.body.prompt;
-
-    // Log the prompt to the Firebase Functions logs (useful for debugging!)
-    console.log(`Received prompt from frontend: "${userPrompt}"`);
-
-    // --- IMPORTANT: This is where your actual AI logic would go! ---
-    // For now, we'll send a simple, fixed reply back to your frontend.
-    const aiResponse = `Hello from Firebase Cloud Functions! You asked: "${userPrompt}". I'm learning!`;
-
-    // Send back a JSON response to your frontend.
-    // Your frontend's 'askAI.js' expects an object like { reply: "..." }
-    response.json({ reply: aiResponse });
-});
+  <section id="list-section" class="feature-section">
+    <h2>List Manager</h2>
+    <input id="list-input" placeholder="Add a new item" />
+    <button id="list-add">Add Item</button>
+    <ul id="list-items"></ul>
+  </section>
+</body>
+</html>
