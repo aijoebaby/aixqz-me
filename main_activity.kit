@@ -11,13 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -42,12 +36,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Launcher for requesting permissions
-    private val permissionLauncher = registerForActivityResult(
+    // Separate launchers for audio and call permissions
+    private val audioPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) startVoiceRecognition()
-        else showToast("Permission denied.")
+        else showToast("Audio permission denied.")
+    }
+
+    private val callPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) makeEmergencyCall()
+        else showToast("Call permission denied.")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,12 +69,15 @@ class MainActivity : ComponentActivity() {
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(
+                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                )
                 putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to AIJoe...")
             }
             speechRecognizerLauncher.launch(intent)
         } else {
-            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
 
@@ -96,7 +100,7 @@ class MainActivity : ComponentActivity() {
             val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:911"))
             startActivity(intent)
         } else {
-            permissionLauncher.launch(Manifest.permission.CALL_PHONE)
+            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
         }
     }
 
@@ -134,17 +138,17 @@ fun MainScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         val features = listOf(
-            "Daily Bible Verse" to { /* TODO */ },
-            "GPS" to { /* TODO */ },
+            "Daily Bible Verse" to { /* TODO: Fetch daily verse */ },
+            "GPS" to { /* TODO: GPS */ },
             "Instant Help (911)" to onEmergencyCall,
-            "Music" to { /* TODO */ },
-            "Weather" to { /* TODO */ },
-            "Mood" to { /* TODO */ },
-            "List" to { /* TODO */ },
-            "Ask AI" to { /* TODO */ },
-            "Joke" to { /* TODO */ },
-            "Help Me Fix Something" to { /* TODO */ },
-            "Find Nearby Place" to { /* TODO */ }
+            "Music" to { /* TODO: Music */ },
+            "Weather" to { /* TODO: Weather */ },
+            "Mood" to { /* TODO: Mood tracking */ },
+            "List" to { /* TODO: List management */ },
+            "Ask AI" to { /* TODO: Ask AI */ },
+            "Joke" to { /* TODO: Tell joke */ },
+            "Help Me Fix Something" to { /* TODO: Fix something */ },
+            "Find Nearby Place" to { /* TODO: Find place */ }
         )
 
         features.forEach { (label, action) ->
