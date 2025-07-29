@@ -20,18 +20,18 @@
   <h1>Welcome to AIJoe Voice!</h1>
 
   <div class="controls">
-    <button onclick="startVoice()">Talk to AIJoe</button>
-    <button onclick="fetchBibleVerse()">Daily Bible Verse</button>
-    <button onclick="getLocation()">GPS</button>
-    <button onclick="callEmergency()">Instant Help</button>
-    <button onclick="playMusic()">Music</button>
-    <button onclick="fetchWeather()">Weather</button>
-    <button onclick="trackMood()">Mood Tracker</button>
-    <button onclick="manageList()">List Manager</button>
-    <button onclick="askAI()">Ask AI</button>
-    <button onclick="tellJoke()">Joke</button>
-    <button onclick="fixSomething()">Help Me Fix Something</button>
-    <button onclick="findPlace()">Find Nearby Place</button>
+    <button id="voice-btn">Talk to AIJoe</button>
+    <button id="bible-btn">Daily Bible Verse</button>
+    <button id="gps-btn">GPS</button>
+    <button id="emergency-btn">Instant Help</button>
+    <button id="music-btn">Music</button>
+    <button id="weather-btn">Weather</button>
+    <button id="mood-tracker-btn">Mood Tracker</button>
+    <button id="list-manager-btn">List Manager</button>
+    <button id="ask-btn">Ask AI</button>
+    <button id="joke-btn">Joke</button>
+    <button id="fix-btn">Help Me Fix Something</button>
+    <button id="find-btn">Find Nearby Place</button>
   </div>
 
   <div id="ai-output"></div>
@@ -48,15 +48,6 @@
     <input id="list-input" placeholder="Add a new item" />
     <button id="list-add">Add Item</button>
     <ul id="list-items"></ul>
-  </section><script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-      .register('service-worker.js')
-      .then(() => console.log('SW registered'))
-      .catch(console.error);
-  }
-</script>
-</body>
-</html>
+  </section>
 </body>
 </html>
