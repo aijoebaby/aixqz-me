@@ -48,6 +48,15 @@
     <input id="list-input" placeholder="Add a new item" />
     <button id="list-add">Add Item</button>
     <ul id="list-items"></ul>
-  </section>
+  </section><script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('service-worker.js')
+      .then(() => console.log('SW registered'))
+      .catch(console.error);
+  }
+</script>
+</body>
+</html>
 </body>
 </html>
