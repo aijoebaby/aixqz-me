@@ -1,6 +1,4 @@
-<script src="<script src="https://not-example.com/script.js"></script>
-://cdn.jsdelivr.net/npm/@picovoice/porcupine-web-en-worker/dist/porcupine-web-en-worker.js"></script>
-!-- index.html -->
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +8,11 @@
   <meta name="theme-color" content="#4CAF50" />
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
+
+  <!-- Porcupine Wake-Word Engine (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@picovoice/porcupine-web-en-worker/dist/porcupine-web-en-worker.js"></script>
+  <!-- Main App Logic as ES Module -->
+  <script type="module" src="script.js"></script>
 </head>
 <body>
   <div class="overlay"></div>
@@ -46,7 +49,5 @@
     <button id="list-add">Add Item</button>
     <ul id="list-items"></ul>
   </section>
-
-  <script src="script.js"></script>
 </body>
 </html>
