@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,22 +7,8 @@
   <meta name="theme-color" content="#4CAF50" />
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
-
-  <!-- Porcupine Wake-Word Engine (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/@picovoice/porcupine-web-en-worker/dist/porcupine-web-en-worker.js"></script>
-  <!-- Main App Logic as ES Module -->
-  <script type="module" src="script.js"></script>
 </head>
-<body><script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-      .register('service-worker.js')
-      .then(() => console.log('SW registered'))
-      .catch(console.error);
-  }
-</script>
-</body>
-</html>
+<body>
   <div class="overlay"></div>
   <img src="joey-bg.png" alt="Joey Avatar" class="avatar" />
   <h1>Welcome to AIJoe Voice!</h1>
@@ -58,6 +43,18 @@
     <button id="list-add">Add Item</button>
     <ul id="list-items"></ul>
   </section>
-</body><script src="https://cdn.jsdelivr.net/npm/@picovoice/porcupine-web-en-worker/dist/porcupine-web-en-worker.js"></script>
-<script type="module" src="script.js"></script>
+
+  <!-- Porcupine wake-word engine -->
+  <script src="https://cdn.jsdelivr.net/npm/@picovoice/porcupine-web-en-worker/dist/porcupine-web-en-worker.js"></script>
+  <!-- Your main app logic as an ES module -->
+  <script type="module" src="script.js"></script>
+  <!-- Register your service worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('service-worker.js')
+        .catch(console.error);
+    }
+  </script>
+</body>
 </html>
