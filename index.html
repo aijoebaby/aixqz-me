@@ -14,7 +14,16 @@
   <!-- Main App Logic as ES Module -->
   <script type="module" src="script.js"></script>
 </head>
-<body>
+<body><script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('service-worker.js')
+      .then(() => console.log('SW registered'))
+      .catch(console.error);
+  }
+</script>
+</body>
+</html>
   <div class="overlay"></div>
   <img src="joey-bg.png" alt="Joey Avatar" class="avatar" />
   <h1>Welcome to AIJoe Voice!</h1>
