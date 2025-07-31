@@ -40,24 +40,22 @@ import { PorcupineWorkerFactory } from "@picovoice/porcupine-web-en-worker";
     // Listen once for when voices become available, then retry
     speechSynthesis.addEventListener(
       "voiceschanged",
-      () => speak(text),
-      { once: true }
-    );
+      
+}function speak(text) {
+  if (!("speechSynthesis" in window)) return;
+
+  const synth = speechSynthesis;
+  const voices = synth.getVoices();
+  if (!voices.length) {
+    synth.addEventListener("voiceschanged", () => speak(text), { once: true });
     return;
   }
 
-  // Cancel any ongoing speech and speak the new text
-  speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "en-US";
-
-  // Pick an English voice (or fallback to the first one)
-  utter.voice =
-    voices.find((v) => v.lang === "en-US") ||
-    voices.find((v) => v.lang.startsWith("en")) ||
-    voices[0];
-
-  speechSynthesis.speak(utter);
+  synth.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = "en-US";
+  utt.voice = voices.find(v => v.lang === "en-US") || voices[0];
+  synth.speak(utt);
 }
 / 3️⃣ Display AI response
 function displayAIResponse(txt) {
