@@ -1,4 +1,4 @@
-// At the very top of script.js, before everything else:
+
 window.addEventListener("DOMContentLoaded", () => {
   // 1) Preload voices so getVoices() isn’t empty later
   if ("speechSynthesis" in window) {
