@@ -1,4 +1,10 @@
+// Load as an ES module:
+// <script type="module" src="script.js"></script>
 
+import { PorcupineWorkerFactory } from "@picovoice/porcupine-web-en-worker";
+
+// 🚀 ENTRY POINT
+window.addEventListener("DOMContentLoaded", init);
 //  🚀 ENTRY POINT: On DOM ready, wire up buttons & start wake‐word
 //
 window.addEventListener("DOMContentLoaded", init);
