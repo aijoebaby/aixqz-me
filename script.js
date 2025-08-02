@@ -1,54 +1,85 @@
-
-window.addEventListener("DOMContentLoaded", () => {
-  // 1) Preload voices so getVoices() isn’t empty later
-  if ("speechSynthesis" in window) {
-    speechSynthesis.getVoices();
-  }
-
-  // 2) Wire up your buttons to the functions
-  document.getElementById("voice-btn")?.addEventListener("click", () => {
-    // This user click unlocks audio on many browsers
-    speak("Listening...");
-    startVoice();
-  });
-
-  document.getElementById("ask-btn")?.addEventListener("click", () => {
-    speak("What would you like to ask?");
-    askAI();
-  });
-
-  // …repeat for any other buttons you want to attach…
-  
-  // 3) Kick off wake-word detection in the background
-  initWakeWord();
-});
-
-// Make sure your index.html loads this with:
+// script.js
+// Load this file as a module in your HTML:
 // <script type="module" src="script.js"></script>
 
 import { PorcupineWorkerFactory } from "@picovoice/porcupine-web-en-worker";
 
-// ——————————————
-// 1️⃣ Wake-Word Detection
-// ——————————————
+//
+// 🚀 Initialize everything once the DOM is ready
+//
+window.addEventListener("DOMContentLoaded", () => {
+  // 1) Preload speech voices
+  if ("speechSynthesis" in window) {
+    speechSynthesis.getVoices();
+  }
+
+  // 2) Wire up UI buttons
+  document.getElementById("voice-btn")?.addEventListener("click", () => {
+    speak("Listening...");
+    startVoice();
+  });
+  document.getElementById("ask-btn")?.addEventListener("click", () => {
+    speak("What would you like to ask?");
+    askAI();
+  });
+  document.getElementById("bible-btn")?.addEventListener("click", fetchBibleVerse);
+  document.getElementById("gps-btn")?.addEventListener("click", getLocation);
+  document.getElementById("weather-btn")?.addEventListener("click", fetchWeather);
+  document.getElementById("mood-tracker-btn")?.addEventListener("click", trackMood);
+  document.getElementById("list-manager-btn")?.addEventListener("click", manageList);
+  document.getElementById("mood-submit")?.addEventListener("click", () => {
+    const input = document.getElementById("mood-input");
+    const m = input.value.trim();
+    if (!m) return;
+    const arr = JSON.parse(localStorage.getItem("moods") || "[]");
+    arr.push({ m, ts: Date.now() });
+    localStorage.setItem("moods", JSON.stringify(arr));
+    input.value = "";
+    renderMood();
+    speak("Mood saved.");
+  });
+  document.getElementById("list-add")?.addEventListener("click", () => {
+    const input = document.getElementById("list-input");
+    const v = input.value.trim();
+    if (!v) return;
+    const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
+    arr.push(v);
+    localStorage.setItem("listItems", JSON.stringify(arr));
+    input.value = "";
+    renderList();
+    speak("Item added to list.");
+  });
+  document.getElementById("emergency-btn")?.addEventListener("click", callEmergency);
+  document.getElementById("music-btn")?.addEventListener("click", playMusic);
+  document.getElementById("joke-btn")?.addEventListener("click", tellJoke);
+  document.getElementById("fix-btn")?.addEventListener("click", fixSomething);
+  document.getElementById("find-btn")?.addEventListener("click", findPlace);
+
+  // 3) Start wake-word detection in the background
+  initWakeWord();
+});
+
+//
+// 1️⃣ Wake-Word Detection using Porcupine
+//
 async function initWakeWord() {
   try {
     const worker = await PorcupineWorkerFactory.create({
-      keywordPaths: [ "/porcupine/porcupine_aijoe.ppn" ],
-      modelPath:    "/porcupine/porcupine_params.pv",
+      keywordPaths: ["/porcupine/porcupine_aijoe.ppn"],
+      modelPath: "/porcupine/porcupine_params.pv"
     });
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const ac     = new AudioContext();
-    const src    = ac.createMediaStreamSource(stream);
-    const proc   = ac.createScriptProcessor(512, 1, 1);
+    const ac = new AudioContext();
+    const src = ac.createMediaStreamSource(stream);
+    const proc = ac.createScriptProcessor(512, 1, 1);
 
     src.connect(proc);
     proc.connect(ac.destination);
 
     proc.onaudioprocess = ({ inputBuffer }) => {
       worker.postMessage({
-        command:    "process",
-        inputFrame: inputBuffer.getChannelData(0),
+        command: "process",
+        inputFrame: inputBuffer.getChannelData(0)
       });
     };
 
@@ -64,12 +95,12 @@ async function initWakeWord() {
   }
 }
 
-// ——————————————
-// 2️⃣ Text-to-Speech
-// ——————————————
+//
+// 2️⃣ Text-to-Speech Helper
+//
 function speak(text) {
   if (!("speechSynthesis" in window)) return;
-  const synth  = speechSynthesis;
+  const synth = speechSynthesis;
   const voices = synth.getVoices();
   if (!voices.length) {
     synth.addEventListener("voiceschanged", () => speak(text), { once: true });
@@ -77,39 +108,38 @@ function speak(text) {
   }
   synth.cancel();
   const utt = new SpeechSynthesisUtterance(text);
-  utt.lang  = "en-US";
+  utt.lang = "en-US";
   utt.voice = voices.find(v => v.lang === "en-US") || voices[0];
   synth.speak(utt);
 }
 
-// ——————————————
-// 3️⃣ On-Screen Output
-// ——————————————
+//
+// 3️⃣ On-Screen Output Helper
+//
 function displayAIResponse(txt) {
   let box = document.getElementById("ai-output");
   if (!box) {
     box = document.createElement("div");
     box.id = "ai-output";
     Object.assign(box.style, {
-      position:    "relative",
-      zIndex:      2,
-      margin:      "1rem auto",
-      padding:     "1rem",
-      maxWidth:    "600px",
-      background:  "rgba(0,0,0,0.7)",
-      color:       "#fff",
-      borderRadius:"8px",
-      fontSize:    "1rem",
-      textAlign:   "left",
+      position: "relative",
+      margin: "1rem auto",
+      padding: "1rem",
+      maxWidth: "600px",
+      background: "rgba(0,0,0,0.7)",
+      color: "#fff",
+      borderRadius: "8px",
+      fontSize: "1rem",
+      textAlign: "left"
     });
     document.body.appendChild(box);
   }
   box.textContent = txt;
 }
 
-// ——————————————
-// 4️⃣ Voice Recognition
-// ——————————————
+//
+// 4️⃣ Voice Recognition (Speech-to-Text)
+//
 function startVoice() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
@@ -117,9 +147,9 @@ function startVoice() {
     return askAI();
   }
   const recog = new SR();
-  recog.lang             = "en-US";
-  recog.interimResults   = false;
-  recog.maxAlternatives  = 1;
+  recog.lang = "en-US";
+  recog.interimResults = false;
+  recog.maxAlternatives = 1;
 
   speak("Listening...");
   recog.start();
@@ -138,28 +168,26 @@ function startVoice() {
   };
 }
 
-// ——————————————
-// 5️⃣ Ask AI (Netlify Function)
-// ——————————————
+//
+// 5️⃣ Ask AI via Netlify Function
+//
 async function askAI(query) {
   const q = query || prompt("What do you want to ask Joey?");
   if (!q) return;
-
   displayAIResponse("Thinking...");
   speak("Joey is thinking...");
-
   try {
     const res = await fetch("/.netlify/functions/askAI", {
-      method:  "POST",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ prompt: q }),
+      body: JSON.stringify({ prompt: q })
     });
     const data = await res.json();
     if (data.reply) {
       displayAIResponse("Joey says: " + data.reply);
       setTimeout(() => speak(data.reply), 300);
     } else {
-      const errMsg = data.error || "No response from Joey.";
+      const errMsg = data.error || "No response.";
       displayAIResponse("Error: " + errMsg);
       speak("Sorry, something went wrong.");
     }
@@ -170,9 +198,9 @@ async function askAI(query) {
   }
 }
 
-// ——————————————
+//
 // 6️⃣ Daily Bible Verse
-// ——————————————
+//
 async function fetchBibleVerse() {
   displayAIResponse("Loading today’s Bible verse...");
   speak("Fetching your daily Bible verse.");
@@ -190,9 +218,9 @@ async function fetchBibleVerse() {
   }
 }
 
-// ——————————————
-// 7️⃣ GPS
-// ——————————————
+//
+// 7️⃣ GPS Location
+//
 function getLocation() {
   displayAIResponse("Getting location...");
   speak("Fetching your location.");
@@ -216,9 +244,9 @@ function getLocation() {
   );
 }
 
-// ——————————————
+//
 // 8️⃣ Weather
-// ——————————————
+//
 async function fetchWeather() {
   displayAIResponse("Fetching weather...");
   speak("Getting the weather now.");
@@ -249,14 +277,13 @@ async function fetchWeather() {
     (err) => {
       console.error("fetchWeather geolocation error:", err);
       displayAIResponse("Location error: " + err.message);
-      speak("Unable to get location for weather.");
-    }
+      speak("Unable to get location for weather.");    }
   );
 }
 
-// ——————————————
+//
 // 9️⃣ Mood Tracker
-// ——————————————
+//
 function trackMood() {
   toggleSection("mood-section");
   renderMood();
@@ -282,9 +309,9 @@ function renderMood() {
   });
 }
 
-// ——————————————
+//
 // 🔟 List Manager
-// ——————————————
+//
 function manageList() {
   toggleSection("list-section");
   renderList();
@@ -310,9 +337,9 @@ function renderList() {
   });
 }
 
-// ——————————————
+//
 // 1️⃣1️⃣ Emergency Help
-// ——————————————
+//
 function callEmergency() {
   const msg = "Calling emergency services. Please stay calm.";
   displayAIResponse(msg);
@@ -320,17 +347,17 @@ function callEmergency() {
   window.location.href = "tel:911";
 }
 
-// ——————————————
+//
 // 1️⃣2️⃣ Music
-// ——————————————
+//
 function playMusic() {
   window.open("https://www.youtube.com/results?search_query=lofi+hip+hop", "_blank");
   speak("Playing music for you.");
 }
 
-// ——————————————
+//
 // 1️⃣3️⃣ Joke
-// ——————————————
+//
 async function tellJoke() {
   const today = new Date().toISOString().split("T")[0];
   let joke = localStorage.getItem("jokeText");
@@ -341,8 +368,7 @@ async function tellJoke() {
       const d = await r.json();
       joke = `${d.setup} … ${d.punchline}`;
     } catch {
-      joke = "Why did the AI cross the road? To optimize the chicken!";
-    }
+      joke = "Why did the AI cross the road? To optimize the chicken!";    }
     localStorage.setItem("jokeDate", today);
     localStorage.setItem("jokeText", joke);
   }
@@ -350,82 +376,29 @@ async function tellJoke() {
   speak(joke);
 }
 
-// ——————————————
+//
 // 1️⃣4️⃣ Help Me Fix Something
-// ——————————————
+//
 function fixSomething() {
   const msg = "Help is on the way. What do you need?";
   displayAIResponse(msg);
   speak(msg);
 }
 
-// ——————————————
+//
 // 1️⃣5️⃣ Find Nearby Place
-// ——————————————
+//
 function findPlace() {
   const msg = "Searching for nearby places…";
   displayAIResponse(msg);
   speak(msg);
 }
 
-// ——————————————
+//
 // 🔀 Section Toggle Helper
-// ——————————————
+//
 function toggleSection(id) {
-  ["mood-section", "list-section"].forEach((sec) => {
+  ["mood-section", "list-section"].forEach(sec => {
     document.getElementById(sec)?.classList.toggle("visible", sec === id);
   });
 }
-
-// ——————————————
-// 🚀 Initialize on DOM Ready
-// ——————————————
-function init() {
-  initWakeWord();
-  if ("speechSynthesis" in window) speechSynthesis.getVoices();
-
-  document.getElementById("voice-btn")?.addEventListener("click", () => {
-    speak("Listening...");
-    startVoice();
-  });
-  document.getElementById("ask-btn")?.addEventListener("click", () => {
-    speak("What would you like to ask?");
-    askAI();
-  });
-  document.getElementById("bible-btn")?.addEventListener("click", fetchBibleVerse);
-  document.getElementById("gps-btn")?.addEventListener("click", getLocation);
-  document.getElementById("weather-btn")?.addEventListener("click", fetchWeather);
-  document.getElementById("mood-tracker-btn")?.addEventListener("click", trackMood);
-  document.getElementById("list-manager-btn")?.addEventListener("click", manageList);
-
-  document.getElementById("mood-submit")?.addEventListener("click", () => {
-    const inpt = document.getElementById("mood-input");
-    const m    = inpt.value.trim();
-    if (!m) return;
-    const arr = JSON.parse(localStorage.getItem("moods") || "[]");
-    arr.push({ m, ts: Date.now() });
-    localStorage.setItem("moods", JSON.stringify(arr));
-    inpt.value = "";
-    renderMood();
-    speak("Mood saved.");
-  });
-  document.getElementById("list-add")?.addEventListener("click", () => {
-    const inpt = document.getElementById("list-input");
-    const v    = inpt.value.trim();
-    if (!v) return;
-    const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
-    arr.push(v);
-    localStorage.setItem("listItems", JSON.stringify(arr));
-    inpt.value = "";
-    renderList();
-    speak("Item added to list.");
-  });
-
-  document.getElementById("music-btn")?.addEventListener("click", playMusic);
-  document.getElementById("emergency-btn")?.addEventListener("click", callEmergency);
-  document.getElementById("joke-btn")?.addEventListener("click", tellJoke);
-  document.getElementById("fix-btn")?.addEventListener("click", fixSomething);
-  document.getElementById("find-btn")?.addEventListener("click", findPlace);
-}
-
-window.addEventListener("DOMContentLoaded", init);
