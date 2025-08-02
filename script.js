@@ -1,4 +1,28 @@
-// script.js
+
+window.addEventListener("DOMContentLoaded", () => {
+  // 1) Preload voices so getVoices() isn’t empty later
+  if ("speechSynthesis" in window) {
+    speechSynthesis.getVoices();
+  }
+
+  // 2) Wire up your buttons to the functions
+  document.getElementById("voice-btn")?.addEventListener("click", () => {
+    // This user click unlocks audio on many browsers
+    speak("Listening...");
+    startVoice();
+  });
+
+  document.getElementById("ask-btn")?.addEventListener("click", () => {
+    speak("What would you like to ask?");
+    askAI();
+  });
+
+  // …repeat for any other buttons you want to attach…
+  
+  // 3) Kick off wake-word detection in the background
+  initWakeWord();
+});
+
 // Make sure your index.html loads this with:
 // <script type="module" src="script.js"></script>
 
