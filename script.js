@@ -1,4 +1,15 @@
-// script.js
+/import { PorcupineWorkerFactory } from "@picovoice/porcupine-web-en-worker";
+
+async function initWakeWord() {
+  const worker = await PorcupineWorkerFactory.create({
+    accessKey:   "M/2OT7Tlg/YKG723MbQ5JSVEFKokX93raraEDQK6pp9vS8xxzjNQIQ==",
+    keywordPaths:[ "/porcupine/porcupine_aijoe.ppn" ],
+    modelPath:   "/porcupine/porcupine_params.pv",
+  });
+
+  // …rest of your setup…
+}
+ script.js
 // Load this file as a module in your HTML:
 // <script type="module" src="script.js"></script>
 
