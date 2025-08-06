@@ -1,3 +1,10 @@
+<script src="https://cdn.jsdelivr.net/npm/@picovoice/porcupine-web-en-worker/dist/porcupine-web-en-worker.js"></script>
+<script type="module" src="script.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js').catch(console.error);
+  }
+</script>
 git add script.js index.html manifest.json
 git commit -m "feat: wire up UI, TTS, wake-word, and helpers"
 git push origin main
