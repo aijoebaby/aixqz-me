@@ -1,6 +1,6 @@
 const axios = require("axios");
 const apiKey = "pk_d85d60f16d394932a513e711174e80b1";
-
+/netlify/functions/index.js
 exports.handler = async function (event, context) {
   const { symbol } = event.queryStringParameters;
 
