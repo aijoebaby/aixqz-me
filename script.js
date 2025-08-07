@@ -1,4 +1,5 @@
-// script.js
+function speak(text)
+/ script.js
 // ——————————————————————————————————————————————————————————
 // Load this as an ES module in your HTML head or body:
 //   <script type="module" src="script.js"></script>
