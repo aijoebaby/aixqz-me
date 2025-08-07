@@ -3,6 +3,7 @@
   "short_name": "AIJoe",
   "description": "An app for voice interactions with AIJoe",
   "start_url": "index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#4CAF50",
