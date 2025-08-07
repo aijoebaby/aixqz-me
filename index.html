@@ -1,41 +1,46 @@
-<script src="https://cdn.jsdelivr.net/npm/@picovoice/porcupine-web-en-worker/dist/porcupine-web-en-worker.js"></script>
-<script type="module" src="script.js"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js').catch(console.error);
-  }
-</script>
-git add script.js index.html manifest.json
-git commit -m "feat: wire up UI, TTS, wake-word, and helpers"
-git push origin main
-!DOCTYPE html>
+<!-- index.html -->
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AIJoe Voice</title>
   <meta name="theme-color" content="#4CAF50" />
+
   <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.json" />
+  <!-- point at your uploaded manifest file -->
+  <link rel="manifest" href="manifest-3.json" />
+
+  <script>
+    // register the service worker if you need it
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/service-worker.js')
+          .catch(console.error);
+      });
+    }
+  </script>
 </head>
 <body>
   <div class="overlay"></div>
-  <img src="joey-bg.png" alt="Joey Avatar" class="avatar" />
+  <!-- make sure your actual file is named joey-bg-2.png -->
+  <img src="joey-bg-2.png" alt="Joey Avatar" class="avatar" />
   <h1>Welcome to AIJoe Voice!</h1>
 
   <div class="controls">
-    <button id="voice-btn">Talk to AIJoe</button>
-    <button id="bible-btn">Daily Bible Verse</button>
-    <button id="gps-btn">GPS</button>
-    <button id="emergency-btn">Instant Help</button>
-    <button id="music-btn">Music</button>
-    <button id="weather-btn">Weather</button>
-    <button id="mood-tracker-btn">Mood Tracker</button>
-    <button id="list-manager-btn">List Manager</button>
-    <button id="ask-btn">Ask AI</button>
-    <button id="joke-btn">Joke</button>
-    <button id="fix-btn">Help Me Fix Something</button>
-    <button id="find-btn">Find Nearby Place</button>
+    <button onclick="startVoice()">Talk to AIJoe</button>
+    <button onclick="fetchBibleVerse()">Daily Bible Verse</button>
+    <button onclick="getLocation()">GPS</button>
+    <button onclick="callEmergency()">Instant Help</button>
+    <button onclick="playMusic()">Music</button>
+    <button onclick="fetchWeather()">Weather</button>
+    <button onclick="trackMood()">Mood Tracker</button>
+    <button onclick="manageList()">List Manager</button>
+    <button onclick="askAI()">Ask AI</button>
+    <button onclick="tellJoke()">Joke</button>
+    <button onclick="fixSomething()">Help Me Fix Something</button>
+    <button onclick="findPlace()">Find Nearby Place</button>
   </div>
 
   <div id="ai-output"></div>
@@ -54,17 +59,6 @@ git push origin main
     <ul id="list-items"></ul>
   </section>
 
-  <!-- Porcupine wake-word engine -->
-  <script src="https://cdn.jsdelivr.net/npm/@picovoice/porcupine-web-en-worker/dist/porcupine-web-en-worker.js"></script>
-  <!-- Your main app logic as an ES module -->
-  <script type="module" src="script.js"></script>
-  <!-- Register your service worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('service-worker.js')
-        .catch(console.error);
-    }
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
