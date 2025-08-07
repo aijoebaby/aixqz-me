@@ -1,415 +1,79 @@
-/import { PorcupineWorkerFactory } from "@picovoice/porcupine-web-en-worker";
-
-async function initWakeWord() {
-  const worker = await PorcupineWorkerFactory.create({
-    accessKey:   "M/2OT7Tlg/YKG723MbQ5JSVEFKokX93raraEDQK6pp9vS8xxzjNQIQ==",
-    keywordPaths:[ "/porcupine/porcupine_aijoe.ppn" ],
-    modelPath:   "/porcupine/porcupine_params.pv",
-  });
-
-  // …rest of your setup…
+/* style.css */
+:root {
+  --primary: #4CAF50;
+  --on-primary: #fff;
+  --bg-overlay: rgba(0,0,0,0.5);
+  --radius: 8px;
+  --gap: 1rem;
+  --font: 'Segoe UI', sans-serif;
 }
- script.js
-// Load this file as a module in your HTML:
-// <script type="module" src="script.js"></script>
-
-import { PorcupineWorkerFactory } from "@picovoice/porcupine-web-en-worker";
-
-//
-// 🚀 Initialize everything once the DOM is ready
-//
-window.addEventListener("DOMContentLoaded", () => {
-  // 1) Preload speech voices
-  if ("speechSynthesis" in window) {
-    speechSynthesis.getVoices();
-  }
-
-  // 2) Wire up UI buttons
-  document.getElementById("voice-btn")?.addEventListener("click", () => {
-    speak("Listening...");
-    startVoice();
-  });
-  document.getElementById("ask-btn")?.addEventListener("click", () => {
-    speak("What would you like to ask?");
-    askAI();
-  });
-  document.getElementById("bible-btn")?.addEventListener("click", fetchBibleVerse);
-  document.getElementById("gps-btn")?.addEventListener("click", getLocation);
-  document.getElementById("weather-btn")?.addEventListener("click", fetchWeather);
-  document.getElementById("mood-tracker-btn")?.addEventListener("click", trackMood);
-  document.getElementById("list-manager-btn")?.addEventListener("click", manageList);
-  document.getElementById("mood-submit")?.addEventListener("click", () => {
-    const input = document.getElementById("mood-input");
-    const m = input.value.trim();
-    if (!m) return;
-    const arr = JSON.parse(localStorage.getItem("moods") || "[]");
-    arr.push({ m, ts: Date.now() });
-    localStorage.setItem("moods", JSON.stringify(arr));
-    input.value = "";
-    renderMood();
-    speak("Mood saved.");
-  });
-  document.getElementById("list-add")?.addEventListener("click", () => {
-    const input = document.getElementById("list-input");
-    const v = input.value.trim();
-    if (!v) return;
-    const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
-    arr.push(v);
-    localStorage.setItem("listItems", JSON.stringify(arr));
-    input.value = "";
-    renderList();
-    speak("Item added to list.");
-  });
-  document.getElementById("emergency-btn")?.addEventListener("click", callEmergency);
-  document.getElementById("music-btn")?.addEventListener("click", playMusic);
-  document.getElementById("joke-btn")?.addEventListener("click", tellJoke);
-  document.getElementById("fix-btn")?.addEventListener("click", fixSomething);
-  document.getElementById("find-btn")?.addEventListener("click", findPlace);
-
-  // 3) Start wake-word detection in the background
-  initWakeWord();
-});
-
-//
-// 1️⃣ Wake-Word Detection using Porcupine
-//
-async function initWakeWord() {
-  try {
-    const worker = await PorcupineWorkerFactory.create({
-      keywordPaths: ["/porcupine/porcupine_aijoe.ppn"],
-      modelPath: "/porcupine/porcupine_params.pv"
-    });
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const ac = new AudioContext();
-    const src = ac.createMediaStreamSource(stream);
-    const proc = ac.createScriptProcessor(512, 1, 1);
-
-    src.connect(proc);
-    proc.connect(ac.destination);
-
-    proc.onaudioprocess = ({ inputBuffer }) => {
-      worker.postMessage({
-        command: "process",
-        inputFrame: inputBuffer.getChannelData(0)
-      });
-    };
-
-    worker.onmessage = (msg) => {
-      if (msg.command === "ppn-keyword") {
-        console.log("✅ Wake-word detected!");
-        speak("Yes?");
-        startVoice();
-      }
-    };
-  } catch (e) {
-    console.error("Wake-word init failed:", e);
-  }
+* { box-sizing: border-box; margin:0; padding:0; }
+body { font-family: var(--font); min-height:100vh; position:relative; }
+body::before {
+  content:""; position:absolute; inset:0;
+  /* updated to match your actual image name */
+  background:url('joey-bg-2.png') center/cover no-repeat;
+  z-index:0;
 }
-
-//
-// 2️⃣ Text-to-Speech Helper
-//
-function speak(text) {
-  if (!("speechSynthesis" in window)) return;
-  const synth = speechSynthesis;
-  const voices = synth.getVoices();
-  if (!voices.length) {
-    synth.addEventListener("voiceschanged", () => speak(text), { once: true });
-    return;
-  }
-  synth.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = "en-US";
-  utt.voice = voices.find(v => v.lang === "en-US") || voices[0];
-  synth.speak(utt);
+.overlay {
+  position:absolute; inset:0;
+  background:var(--bg-overlay);
+  z-index:1;
 }
-
-//
-// 3️⃣ On-Screen Output Helper
-//
-function displayAIResponse(txt) {
-  let box = document.getElementById("ai-output");
-  if (!box) {
-    box = document.createElement("div");
-    box.id = "ai-output";
-    Object.assign(box.style, {
-      position: "relative",
-      margin: "1rem auto",
-      padding: "1rem",
-      maxWidth: "600px",
-      background: "rgba(0,0,0,0.7)",
-      color: "#fff",
-      borderRadius: "8px",
-      fontSize: "1rem",
-      textAlign: "left"
-    });
-    document.body.appendChild(box);
-  }
-  box.textContent = txt;
+.avatar, h1, .controls, .feature-section {
+  position:relative; z-index:2;
 }
-
-//
-// 4️⃣ Voice Recognition (Speech-to-Text)
-//
-function startVoice() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    speak("Speech recognition not supported.");
-    return askAI();
-  }
-  const recog = new SR();
-  recog.lang = "en-US";
-  recog.interimResults = false;
-  recog.maxAlternatives = 1;
-
-  speak("Listening...");
-  recog.start();
-
-  recog.onresult = (e) => {
-    recog.stop();
-    const spoken = e.results[0][0].transcript;
-    displayAIResponse(`You said: "${spoken}"`);
-    askAI(spoken);
-  };
-
-  recog.onerror = (err) => {
-    console.error("Recognition error:", err);
-    displayAIResponse("Recognition error: " + err.error);
-    speak("Sorry, I didn't catch that.");
-  };
+.avatar {
+  display:block; margin:2rem auto 1rem;
+  width:120px; border-radius:50%;
+  box-shadow:0 4px 12px rgba(0,0,0,0.7);
 }
-
-//
-// 5️⃣ Ask AI via Netlify Function
-//
-async function askAI(query) {
-  const q = query || prompt("What do you want to ask Joey?");
-  if (!q) return;
-  displayAIResponse("Thinking...");
-  speak("Joey is thinking...");
-  try {
-    const res = await fetch("/.netlify/functions/askAI", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: q })
-    });
-    const data = await res.json();
-    if (data.reply) {
-      displayAIResponse("Joey says: " + data.reply);
-      setTimeout(() => speak(data.reply), 300);
-    } else {
-      const errMsg = data.error || "No response.";
-      displayAIResponse("Error: " + errMsg);
-      speak("Sorry, something went wrong.");
-    }
-  } catch (err) {
-    console.error("askAI error:", err);
-    displayAIResponse("Network error: " + err.message);
-    speak("Network error occurred.");
-  }
+h1 {
+  text-align:center; color:var(--on-primary);
+  text-shadow:2px 2px 4px rgba(0,0,0,0.7);
+  margin-bottom:1.5rem;
 }
-
-//
-// 6️⃣ Daily Bible Verse
-//
-async function fetchBibleVerse() {
-  displayAIResponse("Loading today’s Bible verse...");
-  speak("Fetching your daily Bible verse.");
-  try {
-    const res = await fetch("https://beta.ourmanna.com/api/v1/get/?format=json&order=daily");
-    if (!res.ok) throw new Error(res.status);
-    const { verse: { details: { text, reference } } } = await res.json();
-    const full = `${reference}\n\n${text}`;
-    displayAIResponse(full);
-    speak(full);
-  } catch (e) {
-    console.error("fetchBibleVerse error:", e);
-    displayAIResponse("Could not load a verse right now.");
-    speak("Sorry, I couldn't load the verse.");
-  }
+.controls {
+  display:flex; flex-wrap:wrap; justify-content:center;
+  gap:var(--gap); padding:0 1rem; margin-bottom:2rem;
 }
-
-//
-// 7️⃣ GPS Location
-//
-function getLocation() {
-  displayAIResponse("Getting location...");
-  speak("Fetching your location.");
-  if (!navigator.geolocation) {
-    displayAIResponse("Geolocation not supported.");
-    speak("Geolocation not supported.");
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const { latitude: lat, longitude: lon } = pos.coords;
-      const msg = `Latitude: ${lat}, Longitude: ${lon}.`;
-      displayAIResponse(msg);
-      speak(msg);
-    },
-    (err) => {
-      console.error("getLocation error:", err);
-      displayAIResponse("Error getting location: " + err.message);
-      speak("Unable to get your location.");
-    }
-  );
+.controls button {
+  background:var(--primary); color:var(--on-primary);
+  border:none; border-radius:var(--radius);
+  padding:0.75rem 1.5rem; font-size:1rem;
+  cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.3);
+  transition:transform .15s, box-shadow .15s;
 }
-
-//
-// 8️⃣ Weather
-//
-async function fetchWeather() {
-  displayAIResponse("Fetching weather...");
-  speak("Getting the weather now.");
-  if (!navigator.geolocation) {
-    displayAIResponse("Geolocation not supported.");
-    speak("Geolocation not supported.");
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const { latitude: lat, longitude: lon } = pos.coords;
-      try {
-        const key = "YOUR_OPENWEATHERMAP_KEY"; // ← replace with your key
-        const r = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${key}`
-        );
-        if (!r.ok) throw new Error(r.status);
-        const d = await r.json();
-        const msg = `Weather in ${d.name}: ${d.weather[0].description}, ${d.main.temp}°F`;
-        displayAIResponse(msg);
-        speak(msg);
-      } catch (e) {
-        console.error("fetchWeather error:", e);
-        displayAIResponse("Weather error: " + e.message);
-        speak("Sorry, I couldn't get the weather.");
-      }
-    },
-    (err) => {
-      console.error("fetchWeather geolocation error:", err);
-      displayAIResponse("Location error: " + err.message);
-      speak("Unable to get location for weather.");    }
-  );
+.controls button:hover {
+  transform:translateY(-2px);
+  box-shadow:0 6px 12px rgba(0,0,0,0.4);
 }
-
-//
-// 9️⃣ Mood Tracker
-//
-function trackMood() {
-  toggleSection("mood-section");
-  renderMood();
-  speak("Opening mood tracker.");
+.feature-section {
+  display:none; padding:1rem; max-width:400px; margin:0 auto;
+  background:var(--bg-overlay); border-radius:var(--radius);
+  margin-bottom:2rem;
 }
-function renderMood() {
-  const ul = document.getElementById("mood-list");
-  ul.innerHTML = "";
-  const arr = JSON.parse(localStorage.getItem("moods") || "[]");
-  arr.forEach((o, i) => {
-    const li = document.createElement("li");
-    li.textContent = `${new Date(o.ts).toLocaleString()}: ${o.m}`;
-    const btn = document.createElement("button");
-    btn.textContent = "✕";
-    btn.onclick = () => {
-      arr.splice(i, 1);
-      localStorage.setItem("moods", JSON.stringify(arr));
-      renderMood();
-      speak("Removed mood entry.");
-    };
-    li.appendChild(btn);
-    ul.appendChild(li);
-  });
+.feature-section.visible { display:block; }
+.feature-section h2 { color:var(--on-primary); margin-bottom:0.5rem; }
+.feature-section input {
+  width:100%; padding:0.5rem; margin-bottom:0.5rem;
+  border-radius:var(--radius); border:none;
 }
-
-//
-// 🔟 List Manager
-//
-function manageList() {
-  toggleSection("list-section");
-  renderList();
-  speak("Opening list manager.");
+.feature-section button {
+  background:var(--primary); width:100%; margin-bottom:1rem;
 }
-function renderList() {
-  const ul = document.getElementById("list-items");
-  ul.innerHTML = "";
-  const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
-  arr.forEach((item, i) => {
-    const li = document.createElement("li");
-    li.textContent = item;
-    const btn = document.createElement("button");
-    btn.textContent = "✕";
-    btn.onclick = () => {
-      arr.splice(i, 1);
-      localStorage.setItem("listItems", JSON.stringify(arr));
-      renderList();
-      speak("Removed item.");
-    };
-    li.appendChild(btn);
-    ul.appendChild(li);
-  });
+.feature-section ul {
+  list-style:none; max-height:150px; overflow:auto;
 }
-
-//
-// 1️⃣1️⃣ Emergency Help
-//
-function callEmergency() {
-  const msg = "Calling emergency services. Please stay calm.";
-  displayAIResponse(msg);
-  speak(msg);
-  window.location.href = "tel:911";
+.feature-section li {
+  background:rgba(255,255,255,0.1); padding:0.5rem;
+  margin-bottom:0.25rem; border-radius:4px;
+  display:flex; justify-content:space-between; align-items:center;
 }
-
-//
-// 1️⃣2️⃣ Music
-//
-function playMusic() {
-  window.open("https://www.youtube.com/results?search_query=lofi+hip+hop", "_blank");
-  speak("Playing music for you.");
+.feature-section li button {
+  background:transparent; border:none; color:#f66;
+  cursor:pointer;
 }
-
-//
-// 1️⃣3️⃣ Joke
-//
-async function tellJoke() {
-  const today = new Date().toISOString().split("T")[0];
-  let joke = localStorage.getItem("jokeText");
-  const stored = localStorage.getItem("jokeDate");
-  if (stored !== today || !joke) {
-    try {
-      const r = await fetch("https://official-joke-api.appspot.com/random_joke");
-      const d = await r.json();
-      joke = `${d.setup} … ${d.punchline}`;
-    } catch {
-      joke = "Why did the AI cross the road? To optimize the chicken!";    }
-    localStorage.setItem("jokeDate", today);
-    localStorage.setItem("jokeText", joke);
-  }
-  displayAIResponse(joke);
-  speak(joke);
-}
-
-//
-// 1️⃣4️⃣ Help Me Fix Something
-//
-function fixSomething() {
-  const msg = "Help is on the way. What do you need?";
-  displayAIResponse(msg);
-  speak(msg);
-}
-
-//
-// 1️⃣5️⃣ Find Nearby Place
-//
-function findPlace() {
-  const msg = "Searching for nearby places…";
-  displayAIResponse(msg);
-  speak(msg);
-}
-
-//
-// 🔀 Section Toggle Helper
-//
-function toggleSection(id) {
-  ["mood-section", "list-section"].forEach(sec => {
-    document.getElementById(sec)?.classList.toggle("visible", sec === id);
-  });
+@media (max-width:480px) {
+  .controls button { flex:1 1 100%; max-width:100%; font-size:1.1rem; }
 }
