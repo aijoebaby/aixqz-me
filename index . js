@@ -1,53 +1,37 @@
-<!-- index.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AIJoe Voice</title>
-  <meta name="theme-color" content="#4CAF50" />
-  <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.json" />
+const axios = require("axios");
+const apiKey = "pk_d85d60f16d394932a513e711174e80b1";
 
-  <!-- Porcupine Wake-Word Engine (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/@picovoice/porcupine-web-en-worker/dist/porcupine-web-en-worker.js"></script>
-  <!-- Main App Logic as ES Module -->
-  <script type="module" src="script.js"></script>
-</head>
-<body>
-  <div class="overlay"></div>
-  <img src="joey-bg.png" alt="Joey Avatar" class="avatar" />
-  <h1>Welcome to AIJoe Voice!</h1>
+exports.handler = async function (event, context) {
+  const { symbol } = event.queryStringParameters;
 
-  <div class="controls">
-    <button onclick="startVoice()">Talk to AIJoe</button>
-    <button onclick="fetchBibleVerse()">Daily Bible Verse</button>
-    <button onclick="getLocation()">GPS</button>
-    <button onclick="callEmergency()">Instant Help</button>
-    <button onclick="playMusic()">Music</button>
-    <button onclick="fetchWeather()">Weather</button>
-    <button onclick="trackMood()">Mood Tracker</button>
-    <button onclick="manageList()">List Manager</button>
-    <button onclick="askAI()">Ask AI</button>
-    <button onclick="tellJoke()">Joke</button>
-    <button onclick="fixSomething()">Help Me Fix Something</button>
-    <button onclick="findPlace()">Find Nearby Place</button>
-  </div>
+  if (!symbol) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: "Missing 'symbol' query parameter" }),
+    };
+  }
 
-  <div id="ai-output"></div>
+  try {
+    const response = await axios.get(
+      `https://cloud.iexapis.com/stable/stock/${symbol}/quote?token=${apiKey}`
+    );
 
-  <section id="mood-section" class="feature-section">
-    <h2>Mood Tracker</h2>
-    <input id="mood-input" placeholder="How are you feeling today?" />
-    <button id="mood-submit">Submit Mood</button>
-    <ul id="mood-list"></ul>
-  </section>
+    const stockData = response.data;
 
-  <section id="list-section" class="feature-section">
-    <h2>List Manager</h2>
-    <input id="list-input" placeholder="Add a new item" />
-    <button id="list-add">Add Item</button>
-    <ul id="list-items"></ul>
-  </section>
-</body>
-</html>
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        symbol: stockData.symbol,
+        companyName: stockData.companyName,
+        latestPrice: stockData.latestPrice,
+        change: stockData.change,
+        changePercent: stockData.changePercent,
+      }),
+    };
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Failed to fetch stock data" }),
+    };
+  }
+};
