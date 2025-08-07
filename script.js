@@ -1,43 +1,42 @@
 // script.js
 // ——————————————————————————————————————————————————————————
-// Load this as a module in your HTML:
+// Load this as an ES module in your HTML head or body:
 //   <script type="module" src="script.js"></script>
 // ——————————————————————————————————————————————————————————
 
 import { PorcupineWorkerFactory } from "@picovoice/porcupine-web-en-worker";
 
 //
-// 🚀 ENTRY POINT: On DOM ready, wire up buttons & start wake-word
+// 🚀 ENTRY POINT: On DOM ready, wire up buttons & start wake‐word
 //
 window.addEventListener("DOMContentLoaded", init);
 
 function init() {
-  // 1️⃣ Preload TTS voices
+  // 1) Preload speech voices (avoids empty getVoices())
   if ("speechSynthesis" in window) {
     speechSynthesis.getVoices();
   }
 
-  // 2️⃣ Wire up all your buttons by ID
-  const handlers = {
-    "voice-btn":        () => { speak("Listening..."); startVoice(); },
-    "ask-btn":          () => { speak("What would you like to ask?"); askAI(); },
-    "bible-btn":        fetchBibleVerse,
-    "gps-btn":          getLocation,
-    "weather-btn":      fetchWeather,
-    "joke-btn":         tellJoke,
-    "fix-btn":          fixSomething,
-    "find-btn":         findPlace,
-    "music-btn":        playMusic,
-    "mood-tracker-btn": trackMood,
-    "list-manager-btn": manageList,
-    "emergency-btn":    callEmergency
-  };
-
-  for (const [id, fn] of Object.entries(handlers)) {
+  // 2) Wire up all your buttons by ID
+  const wire = [
+    ["voice-btn",         () => { speak("Listening..."); startVoice(); }],
+    ["ask-btn",           () => { speak("What would you like to ask?"); askAI(); }],
+    ["bible-btn",         fetchBibleVerse],
+    ["gps-btn",           getLocation],
+    ["weather-btn",       fetchWeather],
+    ["joke-btn",          tellJoke],
+    ["fix-btn",           fixSomething],
+    ["find-btn",          findPlace],
+    ["music-btn",         playMusic],
+    ["mood-tracker-btn",  trackMood],
+    ["list-manager-btn",  manageList],
+    ["emergency-btn",     callEmergency]
+  ];
+  wire.forEach(([id, fn]) => {
     document.getElementById(id)?.addEventListener("click", fn);
-  }
+  });
 
-  // Mood-tracker submit
+  // 3) Mood‐tracker submit
   document.getElementById("mood-submit")?.addEventListener("click", () => {
     const input = document.getElementById("mood-input");
     const m = input.value.trim();
@@ -50,7 +49,7 @@ function init() {
     speak("Mood saved.");
   });
 
-  // List-manager add
+  // 4) List‐manager add
   document.getElementById("list-add")?.addEventListener("click", () => {
     const input = document.getElementById("list-input");
     const v = input.value.trim();
@@ -63,12 +62,12 @@ function init() {
     speak("Item added to list.");
   });
 
-  // 3️⃣ Start wake-word detection in background
+  // 5) Start wake-word detection in background
   initWakeWord();
 }
 
 //
-// 1️⃣ Wake-Word Detection (Porcupine)
+// 1️⃣ Wake-Word Detection with Porcupine
 //
 async function initWakeWord() {
   try {
@@ -79,7 +78,7 @@ async function initWakeWord() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const ac     = new AudioContext();
     const src    = ac.createMediaStreamSource(stream);
-    const proc   = ac.createScriptProcessor(512,1,1);
+    const proc   = ac.createScriptProcessor(512, 1, 1);
 
     src.connect(proc);
     proc.connect(ac.destination);
@@ -91,7 +90,7 @@ async function initWakeWord() {
       });
     };
 
-    worker.onmessage = msg => {
+    worker.onmessage = (msg) => {
       if (msg.command === "ppn-keyword") {
         console.log("✅ Wake-word detected!");
         speak("Yes?");
@@ -111,6 +110,7 @@ function speak(text) {
   const synth  = speechSynthesis;
   const voices = synth.getVoices();
   if (!voices.length) {
+    // wait for voices to load, then retry
     synth.addEventListener("voiceschanged", () => speak(text), { once: true });
     return;
   }
@@ -130,15 +130,15 @@ function displayAIResponse(txt) {
     box = document.createElement("div");
     box.id = "ai-output";
     Object.assign(box.style, {
-      position:    "relative",
-      margin:      "1rem auto",
-      padding:     "1rem",
-      maxWidth:    "600px",
-      background:  "rgba(0,0,0,0.7)",
-      color:       "#fff",
-      borderRadius:"8px",
-      fontSize:    "1rem",
-      textAlign:   "left"
+      position: "relative",
+      margin:   "1rem auto",
+      padding:  "1rem",
+      maxWidth: "600px",
+      background: "rgba(0,0,0,0.7)",
+      color:    "#fff",
+      borderRadius: "8px",
+      fontSize: "1rem",
+      textAlign: "left"
     });
     document.body.appendChild(box);
   }
@@ -146,7 +146,7 @@ function displayAIResponse(txt) {
 }
 
 //
-// 4️⃣ Speech-to-Text Recognition
+// 4️⃣ Voice Recognition
 //
 function startVoice() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -155,21 +155,21 @@ function startVoice() {
     return askAI();
   }
   const recog = new SR();
-  recog.lang           = "en-US";
-  recog.interimResults = false;
-  recog.maxAlternatives= 1;
+  recog.lang = "en-US";
+  recog.interimResults  = false;
+  recog.maxAlternatives = 1;
 
   speak("Listening...");
   recog.start();
 
-  recog.onresult = e => {
+  recog.onresult = (e) => {
     recog.stop();
     const spoken = e.results[0][0].transcript;
     displayAIResponse(`You said: "${spoken}"`);
     askAI(spoken);
   };
 
-  recog.onerror = err => {
+  recog.onerror = (err) => {
     console.error("Recognition error:", err);
     displayAIResponse("Recognition error: " + err.error);
     speak("Sorry, I didn’t catch that.");
@@ -199,9 +199,9 @@ async function askAI(query) {
       displayAIResponse("Error: " + errMsg);
       speak("Sorry, something went wrong.");
     }
-  } catch (e) {
-    console.error("askAI error:", e);
-    displayAIResponse("Network error: " + e.message);
+  } catch (err) {
+    console.error("askAI error:", err);
+    displayAIResponse("Network error: " + err.message);
     speak("Network error occurred.");
   }
 }
@@ -227,7 +227,7 @@ async function fetchBibleVerse() {
 }
 
 //
-// 7️⃣ GPS Location
+// 7️⃣ GPS
 //
 function getLocation() {
   displayAIResponse("Getting location...");
@@ -238,13 +238,13 @@ function getLocation() {
     return;
   }
   navigator.geolocation.getCurrentPosition(
-    pos => {
+    (pos) => {
       const { latitude: lat, longitude: lon } = pos.coords;
       const msg = `Latitude: ${lat}, Longitude: ${lon}.`;
       displayAIResponse(msg);
       speak(msg);
     },
-    err => {
+    (err) => {
       console.error("getLocation error:", err);
       displayAIResponse("Error getting location: " + err.message);
       speak("Unable to get your location.");
@@ -264,7 +264,7 @@ async function fetchWeather() {
     return;
   }
   navigator.geolocation.getCurrentPosition(
-    async pos => {
+    async (pos) => {
       const { latitude: lat, longitude: lon } = pos.coords;
       try {
         const key = "YOUR_OPENWEATHERMAP_KEY"; // ← replace with your key
@@ -273,7 +273,7 @@ async function fetchWeather() {
         );
         if (!r.ok) throw new Error(r.status);
         const d = await r.json();
-        const msg=`Weather in ${d.name}: ${d.weather[0].description}, ${d.main.temp}°F`;
+        const msg = `Weather in ${d.name}: ${d.weather[0].description}, ${d.main.temp}°F`;
         displayAIResponse(msg);
         speak(msg);
       } catch (e) {
@@ -282,7 +282,7 @@ async function fetchWeather() {
         speak("Sorry, I couldn’t get the weather.");
       }
     },
-    err => {
+    (err) => {
       console.error("fetchWeather geolocation error:", err);
       displayAIResponse("Location error: " + err.message);
       speak("Unable to get location for weather.");
@@ -301,13 +301,12 @@ function trackMood() {
 function renderMood() {
   const ul = document.getElementById("mood-list");
   ul.innerHTML = "";
-  JSON.parse(localStorage.getItem("moods") || "[]").forEach((o, i) => {
+  const arr = JSON.parse(localStorage.getItem("moods") || "[]");
+  arr.forEach((o, i) => {
     const li = document.createElement("li");
     li.textContent = `${new Date(o.ts).toLocaleString()}: ${o.m}`;
-    const btn = document.createElement("button");
-    btn.textContent = "✕";
+    const btn = document.createElement("button"); btn.textContent = "✕";
     btn.onclick = () => {
-      const arr = JSON.parse(localStorage.getItem("moods") || "[]");
       arr.splice(i, 1);
       localStorage.setItem("moods", JSON.stringify(arr));
       renderMood();
@@ -329,13 +328,12 @@ function manageList() {
 function renderList() {
   const ul = document.getElementById("list-items");
   ul.innerHTML = "";
-  JSON.parse(localStorage.getItem("listItems") || "[]").forEach((item, i) => {
+  const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
+  arr.forEach((item, i) => {
     const li = document.createElement("li");
     li.textContent = item;
-    const btn = document.createElement("button");
-    btn.textContent = "✕";
+    const btn = document.createElement("button"); btn.textContent = "✕";
     btn.onclick = () => {
-      const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
       arr.splice(i, 1);
       localStorage.setItem("listItems", JSON.stringify(arr));
       renderList();
@@ -347,7 +345,7 @@ function renderList() {
 }
 
 //
-// 1️⃣ Emergency Help
+// 1️⃣1️⃣ Emergency Help
 //
 function callEmergency() {
   const msg = "Calling emergency services. Please stay calm.";
@@ -357,7 +355,7 @@ function callEmergency() {
 }
 
 //
-// 1️⃣ Music
+// 1️⃣2️⃣ Music
 //
 function playMusic() {
   window.open("https://www.youtube.com/results?search_query=lofi+hip+hop", "_blank");
@@ -365,7 +363,7 @@ function playMusic() {
 }
 
 //
-// 1️⃣ Joke
+// 1️⃣3️⃣ Joke
 //
 async function tellJoke() {
   const today = new Date().toISOString().split("T")[0];
@@ -387,7 +385,7 @@ async function tellJoke() {
 }
 
 //
-// 1️⃣ Help Me Fix Something
+// 1️⃣4️⃣ Help Me Fix Something
 //
 function fixSomething() {
   const msg = "Help is on the way. What do you need?";
@@ -396,7 +394,7 @@ function fixSomething() {
 }
 
 //
-// 1️⃣ Find Nearby Place
+// 1️⃣5️⃣ Find Nearby Place
 //
 function findPlace() {
   const msg = "Searching for nearby places…";
@@ -408,7 +406,7 @@ function findPlace() {
 // 🔀 Section Toggle Helper
 //
 function toggleSection(id) {
-  ["mood-section", "list-section"].forEach(sec => {
+  ["mood-section","list-section"].forEach(sec => {
     document.getElementById(sec)?.classList.toggle("visible", sec === id);
   });
 }
