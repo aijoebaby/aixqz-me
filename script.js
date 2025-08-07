@@ -206,22 +206,35 @@ async function askAI(query) {
 }
 
 //
-// 6️⃣ Daily Bible Verse
-//
+// // 6️⃣ Daily Bible Verse
 async function fetchBibleVerse() {
-  displayAIResponse("Loading today’s Bible verse...");
+  // show loading state
+  displayAIResponse("Loading today’s Bible verse…");
   speak("Fetching your daily Bible verse.");
+
   try {
-    const res = await fetch("https://beta.ourmanna.com/api/v1/get/?format=json&order=daily");
-    if (!res.ok) throw new Error(res.status);
-    const { verse: { details: { text, reference } } } = await res.json();
+    const res = await fetch(
+      "https://beta.ourmanna.com/api/v1/get/?format=json&order=daily"
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    // unpack the verse
+    const {
+      verse: {
+        details: { text, reference }
+      }
+    } = json;
+
     const full = `${reference}\n\n${text}`;
     displayAIResponse(full);
     speak(full);
   } catch (err) {
     console.error("fetchBibleVerse error:", err);
-    displayAIResponse("Could not load a verse right now.");
-    speak("Sorry, I couldn’t load the verse.");
+    displayAIResponse("❌ Could not load today’s verse. Try again later.");
+    speak("Sorry, I couldn't fetch your Bible verse.");
+  }
+}
   }
 }
 
