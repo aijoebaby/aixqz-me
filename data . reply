@@ -1,7 +1,15 @@
-function speakText(text) {
-  if ('speechSynthesis' in window) {
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1;
-    window.speechSynthesis.speak(utter);
-  }
-}
+/ (project root)
+├─ README.md
+├─ index.html
+├─ script.js          ← your main UI logic
+├─ style.css
+├─ manifest.json
+├─ service-worker.js   ← make sure no spaces: “service-worker.js”
+├─ joey-bg.png
+│
+├─ netlify/
+│   └─ functions/
+│       └─ askAI.js    ← your serverless function
+│
+└─ data/
+    └─ reply.json      ← if you need to ship a static “data.reply” file, rename it to .json
