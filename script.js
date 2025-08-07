@@ -1,64 +1,42 @@
-function speak(text) {
-  if (!("speechSynthesis" in window)) return;
-
-  const synth  = window.speechSynthesis;
-  const voices = synth.getVoices();
-
-  // If no voices are loaded yet, wait for them and retry once
-  if (!voices.length) {
-    synth.addEventListener("voiceschanged", () => speak(text), { once: true });
-    return;
-  }
-
-  // Cancel any ongoing speech and queue the new utterance
-  synth.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang  = "en-US";
-  // Pick a US-English voice if available, else fall back to the first one
-  utter.voice = voices.find(v => v.lang === "en-US") || voices[0];
-  synth.speak(utter);
-}
- speak(text) {
- speak(text)
-/ script.js
-// ——————————————————————————————————————————————————————————
-// Load this as an ES module in your HTML head or body:
+// script.js
+// ————————————————————————————————————————————————
+// Load this as an ES module in your HTML:
 //   <script type="module" src="script.js"></script>
-// ——————————————————————————————————————————————————————————
+// ————————————————————————————————————————————————
 
 import { PorcupineWorkerFactory } from "@picovoice/porcupine-web-en-worker";
 
 //
-// 🚀 ENTRY POINT: On DOM ready, wire up buttons & start wake‐word
+// 🚀 ENTRY POINT: on DOM ready, wire up buttons & init wake-word
 //
 window.addEventListener("DOMContentLoaded", init);
 
 function init() {
-  // 1) Preload speech voices (avoids empty getVoices())
+  // 1️⃣ Preload TTS voices to avoid empty getVoices()
   if ("speechSynthesis" in window) {
     speechSynthesis.getVoices();
   }
 
-  // 2) Wire up all your buttons by ID
-  const wire = [
-    ["voice-btn",         () => { speak("Listening..."); startVoice(); }],
-    ["ask-btn",           () => { speak("What would you like to ask?"); askAI(); }],
-    ["bible-btn",         fetchBibleVerse],
-    ["gps-btn",           getLocation],
-    ["weather-btn",       fetchWeather],
-    ["joke-btn",          tellJoke],
-    ["fix-btn",           fixSomething],
-    ["find-btn",          findPlace],
-    ["music-btn",         playMusic],
-    ["mood-tracker-btn",  trackMood],
-    ["list-manager-btn",  manageList],
-    ["emergency-btn",     callEmergency]
-  ];
-  wire.forEach(([id, fn]) => {
+  // 2️⃣ Wire up all controls by ID
+  const handlers = {
+    "voice-btn":        () => { speak("Listening..."); startVoice(); },
+    "ask-btn":          () => { speak("What would you like to ask?"); askAI(); },
+    "bible-btn":        fetchBibleVerse,
+    "gps-btn":          getLocation,
+    "weather-btn":      fetchWeather,
+    "joke-btn":         tellJoke,
+    "fix-btn":          fixSomething,
+    "find-btn":         findPlace,
+    "music-btn":        playMusic,
+    "mood-tracker-btn": trackMood,
+    "list-manager-btn": manageList,
+    "emergency-btn":    callEmergency
+  };
+  for (const [id, fn] of Object.entries(handlers)) {
     document.getElementById(id)?.addEventListener("click", fn);
-  });
+  }
 
-  // 3) Mood‐tracker submit
+  // Mood tracker “Submit”
   document.getElementById("mood-submit")?.addEventListener("click", () => {
     const input = document.getElementById("mood-input");
     const m = input.value.trim();
@@ -71,7 +49,7 @@ function init() {
     speak("Mood saved.");
   });
 
-  // 4) List‐manager add
+  // List manager “Add”
   document.getElementById("list-add")?.addEventListener("click", () => {
     const input = document.getElementById("list-input");
     const v = input.value.trim();
@@ -84,12 +62,12 @@ function init() {
     speak("Item added to list.");
   });
 
-  // 5) Start wake-word detection in background
+  // 3️⃣ Start wake-word detection in background
   initWakeWord();
 }
 
 //
-// 1️⃣ Wake-Word Detection with Porcupine
+// 1️⃣ Wake-Word Detection (Porcupine)
 //
 async function initWakeWord() {
   try {
@@ -119,8 +97,8 @@ async function initWakeWord() {
         startVoice();
       }
     };
-  } catch (e) {
-    console.error("Wake-word init failed:", e);
+  } catch (err) {
+    console.error("Wake-word init failed:", err);
   }
 }
 
@@ -132,19 +110,18 @@ function speak(text) {
   const synth  = speechSynthesis;
   const voices = synth.getVoices();
   if (!voices.length) {
-    // wait for voices to load, then retry
     synth.addEventListener("voiceschanged", () => speak(text), { once: true });
     return;
   }
   synth.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang  = "en-US";
-  utt.voice = voices.find(v => v.lang === "en-US") || voices[0];
-  synth.speak(utt);
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang  = "en-US";
+  utter.voice = voices.find(v => v.lang === "en-US") || voices[0];
+  synth.speak(utter);
 }
 
 //
-// 3️⃣ On-Screen Text Output
+// 3️⃣ On-Screen Output Helper
 //
 function displayAIResponse(txt) {
   let box = document.getElementById("ai-output");
@@ -152,15 +129,15 @@ function displayAIResponse(txt) {
     box = document.createElement("div");
     box.id = "ai-output";
     Object.assign(box.style, {
-      position: "relative",
-      margin:   "1rem auto",
-      padding:  "1rem",
-      maxWidth: "600px",
-      background: "rgba(0,0,0,0.7)",
-      color:    "#fff",
-      borderRadius: "8px",
-      fontSize: "1rem",
-      textAlign: "left"
+      position:    "relative",
+      margin:      "1rem auto",
+      padding:     "1rem",
+      maxWidth:    "600px",
+      background:  "rgba(0,0,0,0.7)",
+      color:       "#fff",
+      borderRadius:"8px",
+      fontSize:    "1rem",
+      textAlign:   "left"
     });
     document.body.appendChild(box);
   }
@@ -168,7 +145,7 @@ function displayAIResponse(txt) {
 }
 
 //
-// 4️⃣ Voice Recognition
+// 4️⃣ Speech-to-Text Recognition
 //
 function startVoice() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -178,7 +155,7 @@ function startVoice() {
   }
   const recog = new SR();
   recog.lang = "en-US";
-  recog.interimResults  = false;
+  recog.interimResults = false;
   recog.maxAlternatives = 1;
 
   speak("Listening...");
@@ -199,7 +176,7 @@ function startVoice() {
 }
 
 //
-// 5️⃣ Ask AI (Netlify Function)
+// 5️⃣ Ask AI via Netlify Function
 //
 async function askAI(query) {
   const q = query || prompt("What do you want to ask Joey?");
@@ -241,15 +218,15 @@ async function fetchBibleVerse() {
     const full = `${reference}\n\n${text}`;
     displayAIResponse(full);
     speak(full);
-  } catch (e) {
-    console.error("fetchBibleVerse error:", e);
+  } catch (err) {
+    console.error("fetchBibleVerse error:", err);
     displayAIResponse("Could not load a verse right now.");
     speak("Sorry, I couldn’t load the verse.");
   }
 }
 
 //
-// 7️⃣ GPS
+// 7️⃣ GPS Location
 //
 function getLocation() {
   displayAIResponse("Getting location...");
@@ -298,9 +275,9 @@ async function fetchWeather() {
         const msg = `Weather in ${d.name}: ${d.weather[0].description}, ${d.main.temp}°F`;
         displayAIResponse(msg);
         speak(msg);
-      } catch (e) {
-        console.error("fetchWeather error:", e);
-        displayAIResponse("Weather error: " + e.message);
+      } catch (err) {
+        console.error("fetchWeather error:", err);
+        displayAIResponse("Weather error: " + err.message);
         speak("Sorry, I couldn’t get the weather.");
       }
     },
@@ -323,12 +300,13 @@ function trackMood() {
 function renderMood() {
   const ul = document.getElementById("mood-list");
   ul.innerHTML = "";
-  const arr = JSON.parse(localStorage.getItem("moods") || "[]");
-  arr.forEach((o, i) => {
+  JSON.parse(localStorage.getItem("moods") || "[]").forEach((o, i) => {
     const li = document.createElement("li");
     li.textContent = `${new Date(o.ts).toLocaleString()}: ${o.m}`;
-    const btn = document.createElement("button"); btn.textContent = "✕";
+    const btn = document.createElement("button");
+    btn.textContent = "✕";
     btn.onclick = () => {
+      const arr = JSON.parse(localStorage.getItem("moods") || "[]");
       arr.splice(i, 1);
       localStorage.setItem("moods", JSON.stringify(arr));
       renderMood();
@@ -350,85 +328,12 @@ function manageList() {
 function renderList() {
   const ul = document.getElementById("list-items");
   ul.innerHTML = "";
-  const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
-  arr.forEach((item, i) => {
+  JSON.parse(localStorage.getItem("listItems") || "[]").forEach((item, i) => {
     const li = document.createElement("li");
     li.textContent = item;
-    const btn = document.createElement("button"); btn.textContent = "✕";
+    const btn = document.createElement("button");
+    btn.textContent = "✕";
     btn.onclick = () => {
+      const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
       arr.splice(i, 1);
-      localStorage.setItem("listItems", JSON.stringify(arr));
-      renderList();
-      speak("Removed item.");
-    };
-    li.appendChild(btn);
-    ul.appendChild(li);
-  });
-}
-
-//
-// 1️⃣1️⃣ Emergency Help
-//
-function callEmergency() {
-  const msg = "Calling emergency services. Please stay calm.";
-  displayAIResponse(msg);
-  speak(msg);
-  window.location.href = "tel:911";
-}
-
-//
-// 1️⃣2️⃣ Music
-//
-function playMusic() {
-  window.open("https://www.youtube.com/results?search_query=lofi+hip+hop", "_blank");
-  speak("Playing music for you.");
-}
-
-//
-// 1️⃣3️⃣ Joke
-//
-async function tellJoke() {
-  const today = new Date().toISOString().split("T")[0];
-  let joke = localStorage.getItem("jokeText");
-  const stored = localStorage.getItem("jokeDate");
-  if (stored !== today || !joke) {
-    try {
-      const r = await fetch("https://official-joke-api.appspot.com/random_joke");
-      const d = await r.json();
-      joke = `${d.setup} … ${d.punchline}`;
-    } catch {
-      joke = "Why did the AI cross the road? To optimize the chicken!";
-    }
-    localStorage.setItem("jokeDate", today);
-    localStorage.setItem("jokeText", joke);
-  }
-  displayAIResponse(joke);
-  speak(joke);
-}
-
-//
-// 1️⃣4️⃣ Help Me Fix Something
-//
-function fixSomething() {
-  const msg = "Help is on the way. What do you need?";
-  displayAIResponse(msg);
-  speak(msg);
-}
-
-//
-// 1️⃣5️⃣ Find Nearby Place
-//
-function findPlace() {
-  const msg = "Searching for nearby places…";
-  displayAIResponse(msg);
-  speak(msg);
-}
-
-//
-// 🔀 Section Toggle Helper
-//
-function toggleSection(id) {
-  ["mood-section","list-section"].forEach(sec => {
-    document.getElementById(sec)?.classList.toggle("visible", sec === id);
-  });
-}
+      localStorage.setItem("list
