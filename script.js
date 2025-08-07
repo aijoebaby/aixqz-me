@@ -1,5 +1,31 @@
 // script.js — revised v3.1
+async function fetchStock() {
+  const symbol = document.getElementById("stock-symbol").value.trim().toUpperCase();
+  const resultBox = document.getElementById("stock-result");
 
+  if (!symbol) {
+    resultBox.textContent = "❗ Please enter a stock symbol.";
+    return;
+  }
+
+  resultBox.textContent = "🔍 Fetching...";
+
+  try {
+    const res = await fetch(`/.netlify/functions/index?symbol=${symbol}`);
+    const data = await res.json();
+
+    if (data.error) {
+      resultBox.textContent = `❌ Error: ${data.error}`;
+    } else {
+      resultBox.textContent = `
+📊 ${data.companyName} (${data.symbol})
+💲 Price: $${data.latestPrice}
+📉 Change: ${data.change} (${(data.changePercent * 100).toFixed(2)}%)`;
+    }
+  } catch (err) {
+    resultBox.textContent = "🚨 Failed to load stock data.";
+  }
+}
 // 1️⃣ Preload voices
 window.addEventListener("load", () =>
   "speechSynthesis" in window && speechSynthesis.getVoices()
