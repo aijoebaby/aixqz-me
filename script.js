@@ -1,4 +1,24 @@
 function speak(text) {
+  if (!("speechSynthesis" in window)) return;
+
+  const synth  = window.speechSynthesis;
+  const voices = synth.getVoices();
+
+  // If no voices are loaded yet, wait for them and retry once
+  if (!voices.length) {
+    synth.addEventListener("voiceschanged", () => speak(text), { once: true });
+    return;
+  }
+
+  // Cancel any ongoing speech and queue the new utterance
+  synth.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang  = "en-US";
+  // Pick a US-English voice if available, else fall back to the first one
+  utter.voice = voices.find(v => v.lang === "en-US") || voices[0];
+  synth.speak(utter);
+}
+ speak(text) {
  speak(text)
 / script.js
 // ——————————————————————————————————————————————————————————
