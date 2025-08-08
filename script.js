@@ -1,4 +1,56 @@
-// script.js
+//// ==== SOUND INIT (paste at top of script.js) ====
+let soundReady = false;
+
+function pickVoice(utt) {
+  const v = speechSynthesis.getVoices();
+  utt.voice =
+    v.find(x => /Google US English|Samantha|Daniel|Microsoft (Zira|David)/i.test(x.name)) ||
+    v.find(x => x.lang === "en-US") ||
+    v.find(x => (x.lang || "").startsWith("en")) ||
+    v[0];
+}
+
+function enableSound() {
+  if (!("speechSynthesis" in window)) return;
+  // Tiny beep to satisfy mobile "user gesture" audio policy
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) {
+      const ctx = new AC();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = 880;
+      osc.connect(gain); gain.connect(ctx.destination);
+      gain.gain.value = 0.0001;
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.05);
+      osc.stop(ctx.currentTime + 0.05);
+    }
+  } catch {}
+
+  const u = new SpeechSynthesisUtterance("Sound on");
+  u.lang = "en-US";
+  pickVoice(u);
+  u.onend = () => { soundReady = true; };
+  speechSynthesis.speak(u);
+}
+
+// First user tap/click enables audio
+window.addEventListener("pointerdown", () => {
+  if (!soundReady) enableSound();
+}, { once: true });
+
+// === Replace your speak() with this ===
+function speak(text) {
+  if (!("speechSynthesis" in window)) return;
+  if (!soundReady) { enableSound(); setTimeout(() => speak(text), 200); return; }
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-US";
+  pickVoice(u);
+  u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
+  speechSynthesis.speak(u);
+}
+script.js
 // ————————————————————————————————————————————————
 // Load this as an ES module in your HTML:
 //   <script type="module" src="script.js"></script>
