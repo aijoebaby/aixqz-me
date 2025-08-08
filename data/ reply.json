@@ -1,4 +1,7 @@
-/ (project root)
+/ ({
+  "reply": "Joey here — how can I help?"
+}
+ root)
 ├─ README.md
 ├─ index.html
 ├─ script.js          ← your main UI logic
