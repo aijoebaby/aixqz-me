@@ -1,4 +1,5 @@
-// netlify/functions/askAI.js
+// fetch("/.netlify/functions/askAI", { ... })
+/functions/askAI.js
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 exports.handler = async (event) => {
