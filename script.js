@@ -350,3 +350,72 @@ function renderList() {
       const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
       arr.splice(i, 1);
       localStorage.setItem("list
+/* ==== FULL-SCREEN BACKGROUND + OVERLAY (override) ==== */
+
+/* Keep page basics */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  position: relative;
+}
+
+/* Big background photo that fills the screen */
+body::before {
+  content: "";
+  position: fixed;   /* stays put while you scroll */
+  inset: 0;
+  background: url('joey-bg.png') center/cover no-repeat;  /* ← change filename if needed */
+  z-index: 0;        /* behind everything */
+}
+
+/* Slight dark overlay so buttons/text are readable */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45); /* adjust 0.35–0.6 darker/lighter */
+  z-index: 1;        /* above the photo, below content */
+}
+
+/* Make all your UI sit on top of the overlay */
+h1, .controls, .feature-section, #ai-output, .avatar {
+  position: relative;
+  z-index: 2;
+}
+
+/* Buttons layout on top of the image */
+.controls {
+  position: relative;    /* needed for the translucent card below */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  margin: 1.5rem auto 2.5rem;
+  max-width: 900px;
+}
+
+/* Optional translucent card behind the buttons for extra contrast */
+.controls::before {
+  content: "";
+  position: absolute;
+  inset: -0.5rem;
+  background: rgba(0,0,0,0.25);
+  border-radius: 16px;
+  z-index: -1; /* sits behind the buttons */
+}
+
+/* Button styling (feel free to keep your existing ones) */
+.controls button {
+  background: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.8rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+}
+
+/* If you want to hide the small avatar (optional) */
+/* .avatar { display: none; } */
