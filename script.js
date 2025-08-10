@@ -1,215 +1,56 @@
-//// ==== SOUND INIT (paste at top of script.js) ====
-let soundReady = false;
+// script.js — revised v3.1
 
-function pickVoice(utt) {
-  const v = speechSynthesis.getVoices();
-  utt.voice =
-    v.find(x => /Google US English|Samantha|Daniel|Microsoft (Zira|David)/i.test(x.name)) ||
-    v.find(x => x.lang === "en-US") ||
-    v.find(x => (x.lang || "").startsWith("en")) ||
-    v[0];
-}
+// 1️⃣ Preload voices
+window.addEventListener("load", () =>
+  "speechSynthesis" in window && speechSynthesis.getVoices()
+);
 
-function enableSound() {
-  if (!("speechSynthesis" in window)) return;
-  // Tiny beep to satisfy mobile "user gesture" audio policy
-  try {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (AC) {
-      const ctx = new AC();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.frequency.value = 880;
-      osc.connect(gain); gain.connect(ctx.destination);
-      gain.gain.value = 0.0001;
-      osc.start();
-      gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.05);
-      osc.stop(ctx.currentTime + 0.05);
-    }
-  } catch {}
-
-  const u = new SpeechSynthesisUtterance("Sound on");
-  u.lang = "en-US";
-  pickVoice(u);
-  u.onend = () => { soundReady = true; };
-  speechSynthesis.speak(u);
-}
-
-// First user tap/click enables audio
-window.addEventListener("pointerdown", () => {
-  if (!soundReady) enableSound();
-}, { once: true });
-
-// === Replace your speak() with this ===
+// 2️⃣ speak helper
 function speak(text) {
   if (!("speechSynthesis" in window)) return;
-  if (!soundReady) { enableSound(); setTimeout(() => speak(text), 200); return; }
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "en-US";
-  pickVoice(u);
-  u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
-  speechSynthesis.speak(u);
-}
-script.js
-// ————————————————————————————————————————————————
-// Load this as an ES module in your HTML:
-//   <script type="module" src="script.js"></script>
-// ————————————————————————————————————————————————
-
-import { PorcupineWorkerFactory } from "@picovoice/porcupine-web-en-worker";
-
-//
-// 🚀 ENTRY POINT: on DOM ready, wire up buttons & init wake-word
-//
-window.addEventListener("DOMContentLoaded", init);
-
-function init() {
-  // 1️⃣ Preload TTS voices to avoid empty getVoices()
-  if ("speechSynthesis" in window) {
-    speechSynthesis.getVoices();
-  }
-
-  // 2️⃣ Wire up all controls by ID
-  const handlers = {
-    "voice-btn":        () => { speak("Listening..."); startVoice(); },
-    "ask-btn":          () => { speak("What would you like to ask?"); askAI(); },
-    "bible-btn":        fetchBibleVerse,
-    "gps-btn":          getLocation,
-    "weather-btn":      fetchWeather,
-    "joke-btn":         tellJoke,
-    "fix-btn":          fixSomething,
-    "find-btn":         findPlace,
-    "music-btn":        playMusic,
-    "mood-tracker-btn": trackMood,
-    "list-manager-btn": manageList,
-    "emergency-btn":    callEmergency
-  };
-  for (const [id, fn] of Object.entries(handlers)) {
-    document.getElementById(id)?.addEventListener("click", fn);
-  }
-
-  // Mood tracker “Submit”
-  document.getElementById("mood-submit")?.addEventListener("click", () => {
-    const input = document.getElementById("mood-input");
-    const m = input.value.trim();
-    if (!m) return;
-    const arr = JSON.parse(localStorage.getItem("moods") || "[]");
-    arr.push({ m, ts: Date.now() });
-    localStorage.setItem("moods", JSON.stringify(arr));
-    input.value = "";
-    renderMood();
-    speak("Mood saved.");
-  });
-
-  // List manager “Add”
-  document.getElementById("list-add")?.addEventListener("click", () => {
-    const input = document.getElementById("list-input");
-    const v = input.value.trim();
-    if (!v) return;
-    const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
-    arr.push(v);
-    localStorage.setItem("listItems", JSON.stringify(arr));
-    input.value = "";
-    renderList();
-    speak("Item added to list.");
-  });
-
-  // 3️⃣ Start wake-word detection in background
-  initWakeWord();
-}
-
-//
-// 1️⃣ Wake-Word Detection (Porcupine)
-//
-async function initWakeWord() {
-  try {
-    const worker = await PorcupineWorkerFactory.create({
-      keywordPaths: ["/porcupine/porcupine_aijoe.ppn"],
-      modelPath:    "/porcupine/porcupine_params.pv"
-    });
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const ac     = new AudioContext();
-    const src    = ac.createMediaStreamSource(stream);
-    const proc   = ac.createScriptProcessor(512, 1, 1);
-
-    src.connect(proc);
-    proc.connect(ac.destination);
-
-    proc.onaudioprocess = ({ inputBuffer }) => {
-      worker.postMessage({
-        command:    "process",
-        inputFrame: inputBuffer.getChannelData(0)
-      });
-    };
-
-    worker.onmessage = (msg) => {
-      if (msg.command === "ppn-keyword") {
-        console.log("✅ Wake-word detected!");
-        speak("Yes?");
-        startVoice();
-      }
-    };
-  } catch (err) {
-    console.error("Wake-word init failed:", err);
-  }
-}
-
-//
-// 2️⃣ Text-to-Speech Helper
-//
-function speak(text) {
-  if (!("speechSynthesis" in window)) return;
-  const synth  = speechSynthesis;
-  const voices = synth.getVoices();
-  if (!voices.length) {
-    synth.addEventListener("voiceschanged", () => speak(text), { once: true });
-    return;
-  }
-  synth.cancel();
+  speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang  = "en-US";
-  utter.voice = voices.find(v => v.lang === "en-US") || voices[0];
-  synth.speak(utter);
+  utter.lang = "en-US";
+  const voices = speechSynthesis.getVoices();
+  utter.voice =
+    voices.find((v) => v.lang === "en-US" && v.name.includes("Google")) ||
+    voices.find((v) => v.lang.startsWith("en")) ||
+    voices[0];
+  speechSynthesis.speak(utter);
 }
 
-//
-// 3️⃣ On-Screen Output Helper
-//
+// 3️⃣ display helper
 function displayAIResponse(txt) {
   let box = document.getElementById("ai-output");
   if (!box) {
     box = document.createElement("div");
     box.id = "ai-output";
     Object.assign(box.style, {
-      position:    "relative",
-      margin:      "1rem auto",
-      padding:     "1rem",
-      maxWidth:    "600px",
-      background:  "rgba(0,0,0,0.7)",
-      color:       "#fff",
-      borderRadius:"8px",
-      fontSize:    "1rem",
-      textAlign:   "left"
+      position: "relative",
+      zIndex: 2,
+      margin: "1rem auto",
+      padding: "1rem",
+      maxWidth: "600px",
+      background: "rgba(0,0,0,0.7)",
+      color: "#fff",
+      borderRadius: "8px",
+      fontSize: "1rem",
+      textAlign: "left",
     });
     document.body.appendChild(box);
   }
   box.textContent = txt;
 }
 
-//
-// 4️⃣ Speech-to-Text Recognition
-//
+// 4️⃣ startVoice with real recognition
 function startVoice() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
-    speak("Speech recognition not supported.");
+    speak("Speech recognition not supported. Please type your question.");
     return askAI();
   }
   const recog = new SR();
   recog.lang = "en-US";
-  recog.interimResults = false;
-  recog.maxAlternatives = 1;
-
   speak("Listening...");
   recog.start();
 
@@ -219,83 +60,60 @@ function startVoice() {
     displayAIResponse(`You said: "${spoken}"`);
     askAI(spoken);
   };
-
   recog.onerror = (err) => {
-    console.error("Recognition error:", err);
     displayAIResponse("Recognition error: " + err.error);
-    speak("Sorry, I didn’t catch that.");
+    speak("Sorry, I didn't catch that.");
   };
 }
 
-//
-// 5️⃣ Ask AI via Netlify Function
-//
+// 5️⃣ askAI (with optional query)
 async function askAI(query) {
-  const q = query || prompt("What do you want to ask Joey?");
-  if (!q) return;
+  let q = query;
+  if (!q) {
+    q = prompt("What do you want to ask Joey?");
+    if (!q) return;
+  }
   displayAIResponse("Thinking...");
   speak("Joey is thinking...");
   try {
     const res = await fetch("/.netlify/functions/askAI", {
-      method:  "POST",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ prompt: q })
+      body: JSON.stringify({ prompt: q }),
     });
     const data = await res.json();
     if (data.reply) {
       displayAIResponse("Joey says: " + data.reply);
       setTimeout(() => speak(data.reply), 300);
     } else {
-      const errMsg = data.error || "No response.";
-      displayAIResponse("Error: " + errMsg);
+      displayAIResponse("Error: " + (data.error || "No response"));
       speak("Sorry, something went wrong.");
     }
-  } catch (err) {
-    console.error("askAI error:", err);
-    displayAIResponse("Network error: " + err.message);
+  } catch (e) {
+    displayAIResponse("Network error: " + e.message);
     speak("Network error occurred.");
   }
 }
 
-//
-// // 6️⃣ Daily Bible Verse
+// 6️⃣ Daily Bible Verse
 async function fetchBibleVerse() {
-  // show loading state
   displayAIResponse("Loading today’s Bible verse…");
   speak("Fetching your daily Bible verse.");
-
   try {
-    const res = await fetch(
-      "https://beta.ourmanna.com/api/v1/get/?format=json&order=daily"
-    );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-
-    // unpack the verse
-    const {
-      verse: {
-        details: { text, reference }
-      }
-    } = json;
-
+    const r = await fetch("https://beta.ourmanna.com/api/v1/get/?format=json&order=daily");
+    if (!r.ok) throw new Error(r.status);
+    const { verse: { details: { text, reference } } } = await r.json();
     const full = `${reference}\n\n${text}`;
     displayAIResponse(full);
     speak(full);
-  } catch (err) {
-    console.error("fetchBibleVerse error:", err);
-    displayAIResponse("❌ Could not load today’s verse. Try again later.");
-    speak("Sorry, I couldn't fetch your Bible verse.");
-  }
-}
+  } catch {
+    displayAIResponse("Could not load a verse right now.");
+    speak("Sorry, I couldn't load the verse.");
   }
 }
 
-//
-// 7️⃣ GPS Location
-//
+// 7️⃣ GPS
 function getLocation() {
-  displayAIResponse("Getting location...");
-  speak("Fetching your location.");
   if (!navigator.geolocation) {
     displayAIResponse("Geolocation not supported.");
     speak("Geolocation not supported.");
@@ -304,23 +122,20 @@ function getLocation() {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       const { latitude: lat, longitude: lon } = pos.coords;
-      const msg = `Latitude: ${lat}, Longitude: ${lon}.`;
+      const msg = `Your location is Latitude: ${lat}, Longitude: ${lon}.`;
       displayAIResponse(msg);
       speak(msg);
     },
     (err) => {
-      console.error("getLocation error:", err);
       displayAIResponse("Error getting location: " + err.message);
       speak("Unable to get your location.");
     }
   );
 }
 
-//
 // 8️⃣ Weather
-//
 async function fetchWeather() {
-  displayAIResponse("Fetching weather...");
+  displayAIResponse("Fetching weather…");
   speak("Getting the weather now.");
   if (!navigator.geolocation) {
     displayAIResponse("Geolocation not supported.");
@@ -331,7 +146,7 @@ async function fetchWeather() {
     async (pos) => {
       const { latitude: lat, longitude: lon } = pos.coords;
       try {
-        const key = "YOUR_OPENWEATHERMAP_KEY"; // ← replace with your key
+        const key = "YOUR_OPENWEATHERMAP_KEY"; // ← add your key
         const r = await fetch(
           `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${key}`
         );
@@ -340,23 +155,19 @@ async function fetchWeather() {
         const msg = `Weather in ${d.name}: ${d.weather[0].description}, ${d.main.temp}°F`;
         displayAIResponse(msg);
         speak(msg);
-      } catch (err) {
-        console.error("fetchWeather error:", err);
-        displayAIResponse("Weather error: " + err.message);
-        speak("Sorry, I couldn’t get the weather.");
+      } catch (e) {
+        displayAIResponse("Weather error: " + e.message);
+        speak("Sorry, I couldn't get the weather.");
       }
     },
     (err) => {
-      console.error("fetchWeather geolocation error:", err);
       displayAIResponse("Location error: " + err.message);
       speak("Unable to get location for weather.");
     }
   );
 }
 
-//
 // 9️⃣ Mood Tracker
-//
 function trackMood() {
   toggleSection("mood-section");
   renderMood();
@@ -365,13 +176,13 @@ function trackMood() {
 function renderMood() {
   const ul = document.getElementById("mood-list");
   ul.innerHTML = "";
-  JSON.parse(localStorage.getItem("moods") || "[]").forEach((o, i) => {
+  const arr = JSON.parse(localStorage.getItem("moods") || "[]");
+  arr.forEach((o, i) => {
     const li = document.createElement("li");
     li.textContent = `${new Date(o.ts).toLocaleString()}: ${o.m}`;
     const btn = document.createElement("button");
     btn.textContent = "✕";
     btn.onclick = () => {
-      const arr = JSON.parse(localStorage.getItem("moods") || "[]");
       arr.splice(i, 1);
       localStorage.setItem("moods", JSON.stringify(arr));
       renderMood();
@@ -381,10 +192,19 @@ function renderMood() {
     ul.appendChild(li);
   });
 }
+document.getElementById("mood-submit").onclick = () => {
+  const inpt = document.getElementById("mood-input");
+  const m = inpt.value.trim();
+  if (!m) return;
+  const arr = JSON.parse(localStorage.getItem("moods") || "[]");
+  arr.push({ m, ts: Date.now() });
+  localStorage.setItem("moods", JSON.stringify(arr));
+  inpt.value = "";
+  renderMood();
+  speak("Mood saved.");
+};
 
-//
 // 🔟 List Manager
-//
 function manageList() {
   toggleSection("list-section");
   renderList();
@@ -393,81 +213,84 @@ function manageList() {
 function renderList() {
   const ul = document.getElementById("list-items");
   ul.innerHTML = "";
-  JSON.parse(localStorage.getItem("listItems") || "[]").forEach((item, i) => {
+  const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
+  arr.forEach((item, i) => {
     const li = document.createElement("li");
     li.textContent = item;
     const btn = document.createElement("button");
     btn.textContent = "✕";
     btn.onclick = () => {
-      const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
       arr.splice(i, 1);
-      localStorage.setItem("list
-/* ==== FULL-SCREEN BACKGROUND + OVERLAY (override) ==== */
+      localStorage.setItem("listItems", JSON.stringify(arr));
+      renderList();
+      speak("Removed item.");
+    };
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+}
+document.getElementById("list-add").onclick = () => {
+  const inpt = document.getElementById("list-input");
+  const v = inpt.value.trim();
+  if (!v) return;
+  const arr = JSON.parse(localStorage.getItem("listItems") || "[]");
+  arr.push(v);
+  localStorage.setItem("listItems", JSON.stringify(arr));
+  inpt.value = "";
+  renderList();
+  speak("Item added to list.");
+};
 
-/* Keep page basics */
-body {
-  font-family: 'Segoe UI', sans-serif;
-  min-height: 100vh;
-  margin: 0;
-  position: relative;
+// 1️⃣1️⃣ Emergency Help
+function callEmergency() {
+  const msg = "Calling emergency services. Please stay calm.";
+  displayAIResponse(msg);
+  speak(msg);
 }
 
-/* Big background photo that fills the screen */
-body::before {
-  content: "";
-  position: fixed;   /* stays put while you scroll */
-  inset: 0;
-  background: url('joey-bg.png') center/cover no-repeat;  /* ← change filename if needed */
-  z-index: 0;        /* behind everything */
+// 1️⃣2️⃣ Music
+function playMusic() {
+  window.open("https://www.youtube.com/results?search_query=lofi+hip+hop", "_blank");
+  speak("Playing music for you.");
 }
 
-/* Slight dark overlay so buttons/text are readable */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.45); /* adjust 0.35–0.6 darker/lighter */
-  z-index: 1;        /* above the photo, below content */
+// 1️⃣3️⃣ Joke
+async function tellJoke() {
+  const today = new Date().toISOString().split("T")[0];
+  let joke = localStorage.getItem("jokeText");
+  const stored = localStorage.getItem("jokeDate");
+  if (stored !== today || !joke) {
+    try {
+      const r = await fetch("https://official-joke-api.appspot.com/random_joke");
+      const d = await r.json();
+      joke = `${d.setup} … ${d.punchline}`;
+    } catch {
+      joke = "Why did the AI cross the road? To optimize the chicken!";
+    }
+    localStorage.setItem("jokeDate", today);
+    localStorage.setItem("jokeText", joke);
+  }
+  displayAIResponse(joke);
+  speak(joke);
 }
 
-/* Make all your UI sit on top of the overlay */
-h1, .controls, .feature-section, #ai-output, .avatar {
-  position: relative;
-  z-index: 2;
+// 1️⃣4️⃣ Help Me Fix Something
+function fixSomething() {
+  const msg = "Help is on the way. What do you need?";
+  displayAIResponse(msg);
+  speak(msg);
 }
 
-/* Buttons layout on top of the image */
-.controls {
-  position: relative;    /* needed for the translucent card below */
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-  padding: 1rem;
-  margin: 1.5rem auto 2.5rem;
-  max-width: 900px;
+// 1️⃣5️⃣ Find Nearby Place
+function findPlace() {
+  const msg = "Searching for nearby places…";
+  displayAIResponse(msg);
+  speak(msg);
 }
 
-/* Optional translucent card behind the buttons for extra contrast */
-.controls::before {
-  content: "";
-  position: absolute;
-  inset: -0.5rem;
-  background: rgba(0,0,0,0.25);
-  border-radius: 16px;
-  z-index: -1; /* sits behind the buttons */
+// ✅ Section toggle helper
+function toggleSection(id) {
+  ["mood-section", "list-section"].forEach((sec) => {
+    document.getElementById(sec).classList.toggle("visible", sec === id);
+  });
 }
-
-/* Button styling (feel free to keep your existing ones) */
-.controls button {
-  background: #4CAF50;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 0.8rem 1.2rem;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-}
-
-/* If you want to hide the small avatar (optional) */
-/* .avatar { display: none; } */
