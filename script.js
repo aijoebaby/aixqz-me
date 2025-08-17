@@ -1,4 +1,47 @@
-// script.js — revised v3.1
+/// === FORCE the correct AIJOE endpoint everywhere ===
+const AIJOE_ENDPOINT = "https://aixqz.life/.netlify/functions/askAI";
+
+// Monkey-patch fetch to redirect any calls to /.netlify/functions/askAI
+(function () {
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    try {
+      let url = typeof input === "string" ? input : input.url;
+      // If code uses a relative path or an old host, normalize it:
+      if (url.includes("/.netlify/functions/askAI")) {
+        url = AIJOE_ENDPOINT;
+        if (typeof input !== "string") {
+          // Rebuild the Request with the corrected URL
+          input = new Request(url, input);
+        } else {
+          input = url;
+        }
+      }
+      return originalFetch(input, init);
+    } catch (e) {
+      return originalFetch(input, init);
+    }
+  };
+})();
+
+// Optional: a helper you can call directly from your UI
+async function askAI(userText) {
+  const res = await fetch(AIJOE_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: userText }),
+  });
+  if (!res.ok) throw new Error("Bad response " + res.status);
+  const data = await res.json();
+  return data.reply || "(no reply)";
+}
+
+// Optional: quick health check on load (see console)
+fetch(AIJOE_ENDPOINT, { method: "GET" })
+  .then(r => r.json())
+  .then(j => console.log("AIJOE health:", j))
+  .catch(e => console.warn("AIJOE not reachable:", e));
+ script.js — revised v3.1
 
 // 1️⃣ Preload voices
 window.addEventListener("load", () =>
