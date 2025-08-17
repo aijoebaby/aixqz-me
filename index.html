@@ -90,5 +90,32 @@
       if (e.key === "Enter") onAsk();
     });
   </script>
-</body>
+<<script>
+// === AIJOE API endpoint (single source of truth) ===
+window.AIJOE_ENDPOINT = "https://aixqz.life/.netlify/functions/askAI";
+
+// Wrap your existing ask function (or define one if missing)
+async function askAI(userText) {
+  const res = await fetch(window.AIJOE_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: userText }),
+  });
+  if (!res.ok) throw new Error("Bad response " + res.status);
+  const data = await res.json();
+  return data.reply || "(no reply)";
+}
+
+// Optional: quick health check on load
+(async () => {
+  try {
+    const r = await fetch(window.AIJOE_ENDPOINT, { method: "GET" });
+    const j = await r.json();
+    console.log("AIJOE health:", j);
+  } catch (e) {
+    console.warn("AIJOE not reachable:", e);
+  }
+})();
+</script>
+body>
 </html>
