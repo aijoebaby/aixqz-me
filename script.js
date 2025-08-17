@@ -1,4 +1,5 @@
-/// === FORCE the correct AIJOE endpoint everywhere ===
+const AIJOE_ENDPOINT = "https://aixqz.life/.netlify/functions/askAI";
+// === FORCE the correct AIJOE endpoint everywhere ===
 const AIJOE_ENDPOINT = "https://aixqz.life/.netlify/functions/askAI";
 
 // Monkey-patch fetch to redirect any calls to /.netlify/functions/askAI
