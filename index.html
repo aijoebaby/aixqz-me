@@ -127,5 +127,35 @@ async function askAI(userText) {
   }
 })();
 </script>
-body>
+body><!-- === BEGIN AIJOE FOOTER PATCH === -->
+<script>
+// 1) Single source of truth for the endpoint
+window.AIJOE_ENDPOINT = "https://aixqz.life/.netlify/functions/askAI";
+
+// 2) Helper your UI can call anywhere
+window.askAI = async function(userText) {
+  const res = await fetch(window.AIJOE_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: userText }),
+  });
+  if (!res.ok) throw new Error("Bad response " + res.status);
+  const data = await res.json();
+  return data.reply || "(no reply)";
+};
+
+// 3) Quick health check (see browser console)
+fetch(window.AIJOE_ENDPOINT, { method: "GET" })
+  .then(r => r.json())
+  .then(j => console.log("AIJOE health:", j))
+  .catch(e => console.warn("AIJOE not reachable:", e));
+</script>
+
+<script>
+/* 4) Register your service worker with a cache-buster */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/service-worker.js?v=7").catch(console.error);
+}
+</script>
+<!-- === END AIJOE FOOTER PATCH === -->
 </html>
