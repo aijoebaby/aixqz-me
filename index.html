@@ -1,64 +1,94 @@
-<!-- index.html -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AIJoe Voice</title>
-  <meta name="theme-color" content="#4CAF50" />
-
-  <link rel="stylesheet" href="style.css" />
-  <!-- point at your uploaded manifest file -->
-  <link rel="manifest" href="manifest-3.json" />
-
-  <script>
-    // register the service worker if you need it
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker
-          .register('/service-worker.js')
-          .catch(console.error);
-      });
-    }
-  </script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AIJOE</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 0; background:#0f172a; color:#e2e8f0; }
+    .wrap { max-width: 720px; margin: 40px auto; padding: 16px; }
+    h1 { margin: 0 0 16px; font-size: 28px; }
+    .card { background:#111827; border:1px solid #1f2937; border-radius:16px; padding:16px; }
+    .row { display:flex; gap:8px; margin-top:12px; }
+    input[type="text"] { flex:1; padding:12px; border-radius:12px; border:1px solid #334155; background:#0b1220; color:#e2e8f0; }
+    button { padding:12px 16px; border-radius:12px; border:0; background:#22c55e; color:#0b1220; font-weight:700; cursor:pointer; }
+    button:disabled { opacity:0.6; cursor:not-allowed; }
+    .out { white-space:pre-wrap; background:#0b1220; border:1px solid #334155; border-radius:12px; padding:12px; min-height:80px; margin-top:12px; }
+    small { color:#94a3b8; }
+  </style>
 </head>
 <body>
-  <div class="overlay"></div>
-  <!-- make sure your actual file is named joey-bg-2.png -->
-  <img src="joey-bg-2.png" alt="Joey Avatar" class="avatar" />
-  <h1>Welcome to AIJoe Voice!</h1>
+  <div class="wrap">
+    <h1>AIJOE HELLO 🐶</h1>
 
-  <div class="controls">
-    <button onclick="startVoice()">Talk to AIJoe</button>
-    <button onclick="fetchBibleVerse()">Daily Bible Verse</button>
-    <button onclick="getLocation()">GPS</button>
-    <button onclick="callEmergency()">Instant Help</button>
-    <button onclick="playMusic()">Music</button>
-    <button onclick="fetchWeather()">Weather</button>
-    <button onclick="trackMood()">Mood Tracker</button>
-    <button onclick="manageList()">List Manager</button>
-    <button onclick="askAI()">Ask AI</button>
-    <button onclick="tellJoke()">Joke</button>
-    <button onclick="fixSomething()">Help Me Fix Something</button>
-    <button onclick="findPlace()">Find Nearby Place</button>
+    <div class="card">
+      <small>Connected to:</small>
+      <div id="health" class="out">Checking…</div>
+
+      <div class="row">
+        <input id="userText" type="text" placeholder="Ask Joey anything…" />
+        <button id="askBtn">Ask</button>
+      </div>
+
+      <div id="reply" class="out" aria-live="polite"></div>
+    </div>
   </div>
 
-  <div id="ai-output"></div>
+  <script>
+    // === The ONLY endpoint your app should call ===
+    const AIJOE_ENDPOINT = "https://aixqz.life/.netlify/functions/askAI";
 
-  <section id="mood-section" class="feature-section">
-    <h2>Mood Tracker</h2>
-    <input id="mood-input" placeholder="How are you feeling today?" />
-    <button id="mood-submit">Submit Mood</button>
-    <ul id="mood-list"></ul>
-  </section>
+    const healthEl = document.getElementById("health");
+    const replyEl  = document.getElementById("reply");
+    const askBtn   = document.getElementById("askBtn");
+    const inputEl  = document.getElementById("userText");
 
-  <section id="list-section" class="feature-section">
-    <h2>List Manager</h2>
-    <input id="list-input" placeholder="Add a new item" />
-    <button id="list-add">Add Item</button>
-    <ul id="list-items"></ul>
-  </section>
+    // Health check on load (helps catch “network error” early)
+    (async function ping() {
+      try {
+        const res  = await fetch(AIJOE_ENDPOINT, { method: "GET" });
+        const data = await res.json();
+        healthEl.textContent = JSON.stringify(data);
+      } catch (e) {
+        healthEl.textContent = "Connection problem ❌";
+        console.error(e);
+      }
+    })();
 
-  <script src="script.js"></script>
+    async function askAI(userText) {
+      const res = await fetch(AIJOE_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: userText }),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error("Bad response: " + res.status + " " + txt);
+      }
+      const data = await res.json();
+      return data.reply || "(no reply)";
+    }
+
+    async function onAsk() {
+      const msg = (inputEl.value || "").trim();
+      if (!msg) { inputEl.focus(); return; }
+      askBtn.disabled = true;
+      replyEl.textContent = "Joey is thinking… 🐾";
+      try {
+        const reply = await askAI(msg);
+        replyEl.textContent = reply;
+      } catch (e) {
+        replyEl.textContent = "Network error. Check endpoint and Netlify function.";
+        console.error(e);
+      } finally {
+        askBtn.disabled = false;
+      }
+    }
+
+    askBtn.addEventListener("click", onAsk);
+    inputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") onAsk();
+    });
+  </script>
 </body>
 </html>
