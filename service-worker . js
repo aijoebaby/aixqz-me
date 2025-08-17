@@ -1,67 +1,74 @@
-// netlify/functions/debug-env.js
-exports.handler = async () => {
-  return {
-    statusCode: 200,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      context: process.env.CONTEXT, // "production", "deploy-preview", etc.
-      has_OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
-      has_NETLIFY_PICOVOICE_KEY: !!process.env.NETLIFY_PICOVOICE_KEY
-    })
-  };
-};
-/ service-worker.js – cache app shell
+// service-worker.js
+// Bump this when you change assets
+const CACHE_NAME = "aijoe-v4";
 
-const CACHE_VERSION = 1;
-const CACHE_NAME = `aijoe-v${CACHE_VERSION}`;
-const STATIC_ASSETS = [
-  "./",
-  "./index.html",
-  "./style.css",
-  "./script.js",
-  "./joey-bg.png",
-  "./manifest.json",
-  "./offline.html" // Add an offline fallback page if you have one
+// List only stable, static files you actually serve
+const ASSETS = [
+  "/",                // optional, keep if you serve index.html at /
+  "/index.html",
+  "/style.css",
+  "/script.js",
+  "/joey.png",        // rename to your real image file name
+  "/manifest.json",
 ];
 
-// Install event: cache static assets
+// Install: pre-cache core assets (best-effort)
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(ASSETS.map((u) => u + "?v=4")).catch(() => null)
+    )
   );
   self.skipWaiting();
 });
 
-// Activate event: clean up old caches
+// Activate: delete old caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) =>
-      Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        })
-      )
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
     )
   );
   self.clients.claim();
 });
 
-// Fetch event: respond with cached assets, or fetch from network
+// Fetch strategy:
+// - Never cache API calls to Netlify Functions (network-first, no cache)
+// - For navigation and static GETs, use stale-while-revalidate
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return; // Only handle GET requests
+  const req = event.request;
+
+  // Only handle GET requests
+  if (req.method !== "GET") return;
+
+  const url = new URL(req.url);
+
+  // 1) BYPASS caching for your function endpoint
+  if (url.pathname.startsWith("/.netlify/functions/askAI")) {
+    return; // let the browser hit the network directly
+  }
+
+  // 2) For HTML navigations: use network first (fallback to cache)
+  if (req.mode === "navigate") {
+    event.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(req, copy));
+        return res;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // 3) For other static GET requests: stale-while-revalidate
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).catch(() => {
-        // If request fails and it's a navigation, show offline fallback
-        if (event.request.mode === "navigate") {
-          return caches.match("./offline.html");
-        }
-      });
+    caches.match(req).then((cached) => {
+      const fetchPromise = fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(req, copy));
+        return res;
+      }).catch(() => cached);
+      return cached || fetchPromise;
     })
   );
 });
