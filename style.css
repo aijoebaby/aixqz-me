@@ -1,4 +1,10 @@
-/* style.css */
+/* /* in style.css */
+.hero {
+  background: url("joey.png") center/cover no-repeat;
+  border-radius: 16px;
+  min-height: 220px;
+}
+ */
 :root {
   --primary: #4CAF50;
   --on-primary: #fff;
