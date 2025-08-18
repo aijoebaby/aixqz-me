@@ -423,5 +423,18 @@ window.selfHelp = function () {
 5) Ask Joey: "Help me plan my next 3 steps."`);
 };
 </script>
-/body>
+<script>
+  // Register SW after page load (avoids timing issues)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/service-worker.js?v=11', { scope: '/' })
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.error('SW registration failed:', err));
+    });
+  } else {
+    console.warn('Service workers not supported in this browser');
+  }
+</script>
+<body>
 </html>
