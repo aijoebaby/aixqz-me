@@ -1,167 +1,176 @@
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/service-worker.js?v=6").catch(console.error);
-}
-</script><link rel="stylesheet" href="style.css?v=6">
-<script defer src="script.js?v=6"></script>
-<img src="joey.png?v=6" alt="Joey">
-script src="script.js?v=3"></script>
-<link rel="stylesheet" href="style.css?v=3">
-!<img id="joey" src="joey.png" alt="Joey" style="max-width:240px;width:100%;border-radius:16px;display:block;margin:12px auto;">
- html>
+<!doctype html>
 <html lang="en">
-<head><head>
-  <meta charset="utf-8">
-  <title>AIJOE</title>
-  <link rel="stylesheet" href="style.css">
-  <script defer src="index.js"></script>
-  <script defer src="script.js"></script>
-</head>
+<head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AIJOE</title>
+
+  <!-- Styles & scripts -->
+  <link rel="stylesheet" href="style.css?v=9">
+  <script defer src="index.js?v=9"></script>
+  <script defer src="script.js?v=9"></script>
+
   <style>
-    body { font-family: system-ui, Arial, sans-serif; margin: 0; background:#0f172a; color:#e2e8f0; }
-    .wrap { max-width: 720px; margin: 40px auto; padding: 16px; }
-    h1 { margin: 0 0 16px; font-size: 28px; }
-    .card { background:#111827; border:1px solid #1f2937; border-radius:16px; padding:16px; }
-    .row { display:flex; gap:8px; margin-top:12px; }
-    input[type="text"] { flex:1; padding:12px; border-radius:12px; border:1px solid #334155; background:#0b1220; color:#e2e8f0; }
-    button { padding:12px 16px; border-radius:12px; border:0; background:#22c55e; color:#0b1220; font-weight:700; cursor:pointer; }
-    button:disabled { opacity:0.6; cursor:not-allowed; }
-    .out { white-space:pre-wrap; background:#0b1220; border:1px solid #334155; border-radius:12px; padding:12px; min-height:80px; margin-top:12px; }
-    small { color:#94a3b8; }
+    body {
+      margin: 0;
+      font-family: system-ui, Arial, sans-serif;
+      background: #000;
+      color: #fff;
+      text-align: center;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .background {
+      background: url("joey.png?v=9") center/cover no-repeat;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: -1;
+      filter: brightness(0.6); /* darken slightly for readability */
+    }
+    h1 {
+      margin: 16px;
+      font-size: 28px;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+    }
+    .overlay {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .card {
+      background: rgba(17, 24, 39, 0.8);
+      border-radius: 16px;
+      padding: 16px;
+      max-width: 600px;
+      width: 100%;
+      margin-bottom: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .row { display:flex; gap:8px; }
+    input[type="text"] {
+      flex:1; padding:12px; border-radius:12px;
+      border:1px solid #334155;
+      background:#0b1220; color:#e2e8f0;
+    }
+    button {
+      padding:12px 16px; border-radius:12px; border:0;
+      background:#22c55e; color:#0b1220; font-weight:700; cursor:pointer;
+    }
+    .out {
+      background:rgba(11,18,32,0.8);
+      border:1px solid #334155;
+      border-radius:12px;
+      padding:12px; min-height:80px; margin-top:12px;
+      text-align:left; backdrop-filter: blur(4px);
+    }
+    .grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap:16px;
+      width: 100%;
+      max-width: 900px;
+    }
+    .grid .card {
+      cursor:pointer;
+      transition:0.2s;
+      text-align:center;
+    }
+    .grid .card:hover {
+      background: rgba(30,41,59,0.9);
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>AIJOE HELLO 🐶</h1>
+  <!-- Joey background -->
+  <div class="background"></div>
 
+  <h1>AIJOE HELLO 🐶</h1>
+
+  <div class="overlay">
+    <!-- Ask Joey box -->
     <div class="card">
-      <small>Connected to:</small>
-      <div id="health" class="out">Checking…</div>
-
       <div class="row">
         <input id="userText" type="text" placeholder="Ask Joey anything…" />
         <button id="askBtn">Ask</button>
       </div>
-
       <div id="reply" class="out" aria-live="polite"></div>
+    </div>
+
+    <!-- Feature grid -->
+    <div class="grid">
+      <div class="card" onclick="getBibleVerse()"><h3>📖 Bible Verse</h3></div>
+      <div class="card" onclick="getJoke()"><h3>😂 Joke</h3></div>
+      <div class="card" onclick="getWeather()"><h3>☀️ Weather</h3></div>
+      <div class="card" onclick="getGPS()"><h3>📍 GPS</h3></div>
+      <div class="card" onclick="playMusic()"><h3>🎵 Music</h3></div>
+      <div class="card" onclick="helpMeFix()"><h3>🛠️ Help Me Fix</h3></div>
+      <div class="card" onclick="emergencyHelp()"><h3>🚨 Emergency</h3></div>
+      <div class="card" onclick="selfHelp()"><h3>💡 Self Help</h3></div>
     </div>
   </div>
 
+  <!-- === FOOTER PATCH === -->
   <script>
-    // === The ONLY endpoint your app should call ===
-    const AIJOE_ENDPOINT = "https://aixqz.life/.netlify/functions/askAI";
+    // Endpoint
+    window.AIJOE_ENDPOINT = "https://aixqz.life/.netlify/functions/askAI";
 
-    const healthEl = document.getElementById("health");
-    const replyEl  = document.getElementById("reply");
-    const askBtn   = document.getElementById("askBtn");
-    const inputEl  = document.getElementById("userText");
-
-    // Health check on load (helps catch “network error” early)
-    (async function ping() {
-      try {
-        const res  = await fetch(AIJOE_ENDPOINT, { method: "GET" });
-        const data = await res.json();
-        healthEl.textContent = JSON.stringify(data);
-      } catch (e) {
-        healthEl.textContent = "Connection problem ❌";
-        console.error(e);
-      }
-    })();
-
+    // Ask Joey
     async function askAI(userText) {
-      const res = await fetch(AIJOE_ENDPOINT, {
+      const res = await fetch(window.AIJOE_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: userText }),
       });
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error("Bad response: " + res.status + " " + txt);
-      }
+      if (!res.ok) throw new Error("Bad response " + res.status);
       const data = await res.json();
       return data.reply || "(no reply)";
     }
 
+    // Wire up input
+    const btn = document.getElementById("askBtn");
+    const input = document.getElementById("userText");
+    const replyBox = document.getElementById("reply");
+
     async function onAsk() {
-      const msg = (inputEl.value || "").trim();
-      if (!msg) { inputEl.focus(); return; }
-      askBtn.disabled = true;
-      replyEl.textContent = "Joey is thinking… 🐾";
+      const msg = input.value.trim();
+      if (!msg) return;
+      replyBox.textContent = "Joey is thinking… 🐾";
       try {
         const reply = await askAI(msg);
-        replyEl.textContent = reply;
+        replyBox.textContent = reply;
       } catch (e) {
-        replyEl.textContent = "Network error. Check endpoint and Netlify function.";
+        replyBox.textContent = "Network error ❌";
         console.error(e);
-      } finally {
-        askBtn.disabled = false;
       }
     }
+    btn.addEventListener("click", onAsk);
+    input.addEventListener("keydown", e => { if (e.key === "Enter") onAsk(); });
 
-    askBtn.addEventListener("click", onAsk);
-    inputEl.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") onAsk();
-    });
+    // Placeholder feature functions
+    function getBibleVerse() { replyBox.textContent = "📖 Daily verse coming soon…"; }
+    function getJoke() { replyBox.textContent = "😂 A new joke every day soon…"; }
+    function getWeather() { replyBox.textContent = "☀️ Weather info coming soon…"; }
+    function getGPS() { replyBox.textContent = "📍 GPS feature coming soon…"; }
+    function playMusic() { replyBox.textContent = "🎵 Opening music link…"; }
+    function helpMeFix() { replyBox.textContent = "🛠️ Help guide coming soon…"; }
+    function emergencyHelp() { replyBox.textContent = "🚨 Emergency services soon…"; }
+    function selfHelp() { replyBox.textContent = "💡 Self-help tips coming soon…"; }
+
+    // Health check
+    fetch(window.AIJOE_ENDPOINT, { method: "GET" })
+      .then(r => r.json())
+      .then(j => console.log("AIJOE health:", j))
+      .catch(e => console.warn("AIJOE not reachable:", e));
+
+    // Register Service Worker
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/service-worker.js?v=9").catch(console.error);
+    }
   </script>
-<<script>
-// === AIJOE API endpoint (single source of truth) ===
-window.AIJOE_ENDPOINT = "https://aixqz.life/.netlify/functions/askAI";
-
-// Wrap your existing ask function (or define one if missing)
-async function askAI(userText) {
-  const res = await fetch(window.AIJOE_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: userText }),
-  });
-  if (!res.ok) throw new Error("Bad response " + res.status);
-  const data = await res.json();
-  return data.reply || "(no reply)";
-}
-
-// Optional: quick health check on load
-(async () => {
-  try {
-    const r = await fetch(window.AIJOE_ENDPOINT, { method: "GET" });
-    const j = await r.json();
-    console.log("AIJOE health:", j);
-  } catch (e) {
-    console.warn("AIJOE not reachable:", e);
-  }
-})();
-</script>
-body><!-- === BEGIN AIJOE FOOTER PATCH === -->
-<script>
-// 1) Single source of truth for the endpoint
-window.AIJOE_ENDPOINT = "https://aixqz.life/.netlify/functions/askAI";
-
-// 2) Helper your UI can call anywhere
-window.askAI = async function(userText) {
-  const res = await fetch(window.AIJOE_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: userText }),
-  });
-  if (!res.ok) throw new Error("Bad response " + res.status);
-  const data = await res.json();
-  return data.reply || "(no reply)";
-};
-
-// 3) Quick health check (see browser console)
-fetch(window.AIJOE_ENDPOINT, { method: "GET" })
-  .then(r => r.json())
-  .then(j => console.log("AIJOE health:", j))
-  .catch(e => console.warn("AIJOE not reachable:", e));
-</script>
-
-<script>
-/* 4) Register your service worker with a cache-buster */
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/service-worker.js?v=7").catch(console.error);
-}
-</script>
-<!-- === END AIJOE FOOTER PATCH === -->
+  <!-- === END FOOTER PATCH === -->
+</body>
 </html>
