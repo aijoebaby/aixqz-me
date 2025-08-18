@@ -11,7 +11,22 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers: cors, body: "ok" };
   }window.getJoke = async function () {
   show("😂 Fetching a fresh joke…");
+  try {window.getJoke = async function () {
+  show("😂 Fetching a fresh joke…");
   try {
+    const res = await fetch("https://v2.jokeapi.dev/joke/Any?type=single&safe-mode");
+    const data = await res.json();
+    if (data?.joke) {
+      const joke = `😂 ${data.joke}`;
+      show(joke);
+      speak(joke);   // 🔊 speaks the joke
+    }
+  } catch (e) {
+    const fallback = "😂 Why did the web dev go broke? Because he used up all his cache.";
+    show(fallback);
+    speak(fallback);
+  }
+};
     const res = await fetch("https://v2.jokeapi.dev/joke/Any?type=single&safe-mode");
     const data = await res.json();
     if (data?.joke) {
