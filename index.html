@@ -435,6 +435,24 @@ window.selfHelp = function () {
   } else {
     console.warn('Service workers not supported in this browser');
   }
-</script>
+// === Voice output ===
+function speak(text) {
+  if (!("speechSynthesis" in window)) {
+    console.warn("Speech synthesis not supported in this browser.");
+    return;
+  }
+  const synth = window.speechSynthesis;
+  synth.cancel(); // stop any current speech
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  // pick a US-English voice if available
+  const voices = synth.getVoices();
+  utter.voice =
+    voices.find(v => v.lang === "en-US" && v.name.includes("Google")) ||
+    voices.find(v => v.lang.startsWith("en")) ||
+    voices[0];
+  synth.speak(utter);
+}
+/script>
 <body>
 </html>
