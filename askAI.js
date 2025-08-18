@@ -6,7 +6,19 @@ function json(status, body) {
     statusCode: status,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  };
+  };async function onAsk() {
+  const msg = input.value.trim();
+  if (!msg) return;
+  replyBox.textContent = "Joey is thinking… 🐾";
+  try {
+    const reply = await askAI(msg);
+    replyBox.textContent = reply;
+    speak(reply);  // 🔊 Joey talks
+  } catch (e) {
+    replyBox.textContent = "Network error ❌";
+    console.error(e);
+  }
+}
 }
 
 exports.handler = async (event) => {
