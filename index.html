@@ -14,26 +14,43 @@
       color: #e5e7eb; background: #0b1220; min-height: 100dvh;
     }
     /* Joey full background */
-    .bg { position: fixed; inset: 0;
+    .bg {
+      position: fixed; inset: 0;
       background: url("./joey.png") center / cover no-repeat fixed;
-      filter: saturate(1.05); z-index: -1; }
+      filter: saturate(1.05);
+      z-index: -1;
+    }
 
-    /* Bottom-docked frosted panel under AIJOE’s head */
+    /* Bottom-docked frosted panel (kept SHORT on phones so Joey's head stays visible) */
     .panel {
-      position: fixed; left: 50%;
+      position: fixed;
+      left: 50%;
       bottom: max(14px, env(safe-area-inset-bottom));
       transform: translateX(-50%);
       width: min(900px, 96vw);
-      background: rgba(2,6,23,0.72); backdrop-filter: blur(8px);
-      border-radius: 18px; box-shadow: 0 12px 28px rgba(0,0,0,.45);
-      padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+      background: rgba(2,6,23,0.72);
+      backdrop-filter: blur(8px);
+      border-radius: 18px;
+      box-shadow: 0 12px 28px rgba(0,0,0,.45);
+      padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+      /* KEY: cap height on small screens so the image/head isn't covered */
+      max-height: clamp(180px, 42dvh, 420px);
+      overflow: auto;
     }
 
     h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: .3px; }
     .sub { margin: 0 0 10px; opacity: .9; }
 
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px,1fr));
-      gap: 10px; margin: 10px 0 12px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(165px,1fr));
+      gap: 10px; margin: 10px 0 12px;
+    }
+    /* Tighter grid on narrow phones */
+    @media (max-width: 480px) {
+      .grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+      button { padding: 10px 12px; font-size: 14px; }
+    }
 
     button {
       padding: 12px 14px; border: 0; border-radius: 12px;
@@ -86,6 +103,10 @@
   </main>
 
   <script src="index.js" defer></script>
-  <script> if ("serviceWorker" in navigator) { navigator.serviceWorker.register("service-worker.js").catch(()=>{}); } </script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+    }
+  </script>
 </body>
 </html>
