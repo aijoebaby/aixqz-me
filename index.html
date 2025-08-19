@@ -1,22 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AIJOE – Voice Buttons</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f172a">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>AIJOE – Talk Buttons</title>
+  <meta name="theme-color" content="#0f172a"/>
+  <link rel="manifest" href="manifest.json"/>
+
   <style>
-    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:#0b1220; color:#e5e7eb; }
-    .wrap { min-height:100dvh; display:grid; place-items:center; padding:24px; background: url('./joey-bg.png') center/cover no-repeat fixed; }
-    .panel { width:min(720px, 95vw); background:rgba(2,6,23,0.7); backdrop-filter: blur(8px);
-             padding:20px; border-radius:16px; box-shadow:0 10px 25px rgba(0,0,0,.45); }
-    h1 { margin:0 0 12px; font-size:28px; letter-spacing:.5px; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:12px; margin:12px 0 16px; }
-    button { padding:12px 14px; border:0; border-radius:12px; background:#2563eb; color:white; font-weight:600; cursor:pointer; }
-    button:hover { filter:brightness(1.05); }
+    :root { color-scheme: dark; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+           background:#0b1220; color:#e5e7eb; }
+    .wrap { min-height:100dvh; display:grid; place-items:center; padding:20px;
+            background:url("./joey-bg.png") center/cover no-repeat fixed; }
+    .panel { width:min(780px,96vw); background:rgba(2,6,23,.72); backdrop-filter: blur(8px);
+             padding:20px; border-radius:18px; box-shadow:0 12px 28px rgba(0,0,0,.45); }
+    h1 { margin:0 0 10px; font-size:28px; letter-spacing:.4px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+            gap:12px; margin:14px 0 16px; }
+    button { padding:12px 14px; border:0; border-radius:12px; background:#2563eb; color:#fff;
+             font-weight:700; cursor:pointer; }
+    button:hover { filter: brightness(1.06); }
     #output { white-space:pre-wrap; background:#0b122a; border:1px solid #1f2a44;
-              padding:12px; border-radius:12px; min-height:80px; }
+              padding:12px; border-radius:12px; min-height:90px; }
     .small { opacity:.8; font-size:12px; margin-top:6px; }
   </style>
 </head>
@@ -28,14 +34,22 @@
       <div class="grid">
         <button id="btnVerse">📖 Bible Verse</button>
         <button id="btnJoke">😂 Joke</button>
-        <!-- Add your other feature buttons here and wire them in index.js the same way -->
+        <button id="btnWeather">☀️ Weather</button>
+        <button id="btnGPS">📍 GPS</button>
       </div>
 
-      <div id="output">Tap a button and I’ll read it to you…</div>
-      <div class="small">Tip: Make sure your device volume is up.</div>
+      <div id="output">Tap a button and I’ll speak it…</div>
+      <div class="small">Tip: turn your volume up and allow location for Weather/GPS.</div>
     </div>
   </div>
 
   <script src="index.js" defer></script>
+
+  <!-- Safe service worker: won’t crash if missing -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+    }
+  </script>
 </body>
 </html>
