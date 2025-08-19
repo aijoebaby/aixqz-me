@@ -1,57 +1,54 @@
-/******** Kill any old backend checks (keeps page stable) ********/
+/******** Kill any old backend checks ********/
 try { window.AIJOE_ENDPOINT = null; } catch {}
 window.addEventListener("unhandledrejection", e => console.warn("Silenced bg error:", e.reason));
 
-/**************** SPEAK helper — calm, clear MALE voice ****************/
+/**************** SPEAK — calm, clear MALE ****************/
 function pickMaleVoice() {
   const voices = speechSynthesis.getVoices();
   if (!voices.length) return null;
 
-  const isEn = v => (v.lang || "").toLowerCase().startsWith("en");
-  const byName = needle =>
-    voices.find(v => isEn(v) && v.name.toLowerCase().includes(needle));
+  // English voices only
+  const en = voices.filter(v => /^en([-_]|$)/i.test(v.lang || ""));
 
-  // Most common good male voices across platforms
+  // Helper searchers
+  const by = s => en.find(v => (v.name||"").toLowerCase().includes(s));
+
+  // Widely available male-ish voices across platforms
   const preferred = [
     "google uk english male",
+    "google us english",      // often neutral; we’ll lower pitch below
     "microsoft guy", "microsoft david", "microsoft mark", "microsoft james", "microsoft george",
-    "alex", "daniel", "oliver", "thomas", "fred", "bruce", "brian", "justin", "matthew"
+    "daniel", "oliver", "thomas", "fred", "brian", "justin", "matthew", "alex"
   ];
-  for (const p of preferred) {
-    const v = byName(p);
-    if (v) return v;
-  }
+  for (const p of preferred) { const v = by(p); if (v) return v; }
 
-  // Any English voice that literally says "male"
-  const hasMaleTag = voices.find(v => isEn(v) && /male/i.test(v.name));
-  if (hasMaleTag) return hasMaleTag;
+  // Android-style local male tags (e.g., en-us-x-...#male_1-local)
+  const patternMale = en.find(v =>
+    /male/.test((v.name||"").toLowerCase()) || /male/.test((v.voiceURI||"").toLowerCase())
+  );
+  if (patternMale) return patternMale;
 
-  // Any English Google voice (fallback)
-  const googleEn = voices.find(v => isEn(v) && /google/.test(v.name.toLowerCase()));
-  if (googleEn) return googleEn;
-
-  // Any English → any voice
-  return voices.find(isEn) || voices[0];
+  // Fallbacks
+  return by("google") || en[0] || voices[0];
 }
 
-function speak(text){
-  if(!("speechSynthesis" in window)) return;
+function speak(text) {
+  if (!("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
 
-  const u = new SpeechSynthesisUtterance(String(text||" ").trim()||" ");
+  const u = new SpeechSynthesisUtterance(String(text || " ").trim() || " ");
   u.lang   = "en-US";
-  u.rate   = 0.95; // slightly slower = calmer
-  u.pitch  = 0.9;  // a bit deeper
+  u.rate   = 0.92; // calmer
+  u.pitch  = 0.82; // a bit deeper
   u.volume = 1;
 
   const go = () => { const v = pickMaleVoice(); if (v) u.voice = v; speechSynthesis.speak(u); };
-
   if (!speechSynthesis.getVoices().length) {
-    speechSynthesis.addEventListener("voiceschanged", go, { once:true });
+    speechSynthesis.addEventListener("voiceschanged", go, { once: true });
   } else { go(); }
 }
 
-// prime audio once (mobile)
+// Prime audio once (mobile)
 document.addEventListener("click", function p(){ const u=new SpeechSynthesisUtterance(" "); u.volume=0; speechSynthesis.speak(u); document.removeEventListener("click",p); }, { once:true });
 
 /**************** UI helpers ****************/
@@ -61,12 +58,12 @@ function show(t, say=true){ out.textContent=t; if(say) speak(t); }
 const withTimeout=(p,ms=8000)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),ms))]);
 
 /******** Bible Verse ********/
-const LOCAL_VERSES=[
- "Psalm 23:1 — The Lord is my shepherd; I shall not want.",
- "Philippians 4:13 — I can do all things through Christ who strengthens me.",
- "Proverbs 3:5 — Trust in the Lord with all your heart and lean not on your own understanding.",
- "Isaiah 41:10 — Fear not, for I am with you; be not dismayed, for I am your God.",
- "John 3:16 — For God so loved the world that He gave His only Son…",
+const LOCAL_VERSES = [
+  "Psalm 23:1 — The Lord is my shepherd; I shall not want.",
+  "Philippians 4:13 — I can do all things through Christ who strengthens me.",
+  "Proverbs 3:5 — Trust in the Lord with all your heart and lean not on your own understanding.",
+  "Isaiah 41:10 — Fear not, for I am with you; be not dismayed, for I am your God.",
+  "John 3:16 — For God so loved the world that He gave His only Son…",
 ];
 async function getBibleVerse(){
   try{
@@ -78,12 +75,12 @@ async function getBibleVerse(){
 }
 
 /******** Joke ********/
-const LOCAL_JOKES=[
- "Why did the scarecrow win an award? Because he was outstanding in his field!",
- "I tried to catch fog yesterday. Mist.",
- "What do you call cheese that isn’t yours? Nacho cheese!",
- "I told my computer I needed a break, and it said, “No problem—I’ll go to sleep.”",
- "I asked my dog what’s two minus two. He said nothing."
+const LOCAL_JOKES = [
+  "Why did the scarecrow win an award? Because he was outstanding in his field!",
+  "I tried to catch fog yesterday. Mist.",
+  "What do you call cheese that isn’t yours? Nacho cheese!",
+  "I told my computer I needed a break, and it said, “No problem—I’ll go to sleep.”",
+  "I asked my dog what’s two minus two. He said nothing."
 ];
 async function getJoke(){
   try{
@@ -112,13 +109,12 @@ async function reverseGeocode(lat,lon){
   if(!r.ok) throw 0; const j=await r.json(); return j?.display_name||"";
 }
 
-/************ Music (YouTube) ************/
+/******** Music → open YouTube ********/
 function openYouTube(query = "soothing music") {
   const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-  // Try a new tab first; if blocked, navigate this tab
   let win = null;
   try { win = window.open(url, "_blank", "noopener"); } catch {}
-  if (!win) window.location.href = url;
+  if (!win) window.location.href = url; // fallback if popups blocked
   show(`Opening YouTube for ${query}…`, false);
 }
 
@@ -159,7 +155,7 @@ $("btnGPS")?.addEventListener("click", ()=>{
     }catch{ show(`Your location: Latitude ${lat.toFixed(5)}, Longitude ${lon.toFixed(5)}.`); }
   },()=>show("Location permission denied."));
 });
-$("btnMusic")?.addEventListener("click", ()=> openYouTube());          // ⬅️ YouTube on click
+$("btnMusic")?.addEventListener("click", ()=> openYouTube());   // YouTube on click
 $("btnHelp")?.addEventListener("click", startHelpFlow);
 
 /******** Voice recognition + wake word + chat ********/
@@ -192,12 +188,11 @@ async function handleCommand(s){
   if(/(gps|where am i|my location|where.*am.*i)/.test(s)) return $("btnGPS").click();
 
   if(/(music|song|play)/.test(s)) {
-    // Try to honor a style if user says one
     const kind = /worship|praise/.test(s) ? "worship music"
                : /lofi|relax|chill/.test(s) ? "lofi beats"
                : /jazz/.test(s) ? "jazz"
                : "soothing music";
-    return openYouTube(kind);   // ⬅️ YouTube via voice
+    return openYouTube(kind);
   }
 
   if(/(help|emergency|call 911|call nine one one)/.test(s)) return startHelpFlow();
@@ -239,9 +234,10 @@ function stopVoice(){
   try{ recog && recog.stop(); }catch{}
   setMic(false); wakeStatus.textContent='Wake word: “AIJOE”';
 }
+
 $("btnMic")?.addEventListener("click", startVoice);
 $("btnMicStop")?.addEventListener("click", stopVoice);
 $("btnChat")?.addEventListener("click", ()=>{ chatMode=true; startVoice(); speak("Chat mode on. I’m listening."); });
 
-/* preload voices */
+/* Preload voices */
 window.addEventListener("load", ()=>{ if("speechSynthesis" in window) speechSynthesis.getVoices(); });
