@@ -2,54 +2,100 @@
 try { window.AIJOE_ENDPOINT = null; } catch {}
 window.addEventListener("unhandledrejection", e => console.warn("Silenced bg error:", e.reason));
 
-/**************** SPEAK — calm, clear MALE ****************/
-function pickMaleVoice() {
-  const voices = speechSynthesis.getVoices();
-  if (!voices.length) return null;
+/**************** Voice selection ****************/
+const VOICE_KEY = "aijoe.voice.key";
+const voiceSelect = document.getElementById("voiceSelect");
 
-  // English voices only
+function listVoices() {
+  return speechSynthesis.getVoices();
+}
+function voiceKey(v) {
+  return v?.voiceURI || `${v?.name}|${v?.lang}`;
+}
+function findVoiceByKey(key) {
+  const vs = listVoices();
+  return vs.find(v => v.voiceURI === key) ||
+         vs.find(v => `${v.name}|${v.lang}` === key) ||
+         vs.find(v => v.name === key);
+}
+function pickMaleVoice(fallbackList) {
+  const voices = (fallbackList && fallbackList.length) ? fallbackList : listVoices();
   const en = voices.filter(v => /^en([-_]|$)/i.test(v.lang || ""));
-
-  // Helper searchers
-  const by = s => en.find(v => (v.name||"").toLowerCase().includes(s));
-
-  // Widely available male-ish voices across platforms
-  const preferred = [
-    "google uk english male",
-    "google us english",      // often neutral; we’ll lower pitch below
-    "microsoft guy", "microsoft david", "microsoft mark", "microsoft james", "microsoft george",
-    "daniel", "oliver", "thomas", "fred", "brian", "justin", "matthew", "alex"
+  const pool = en.length ? en : voices;
+  const prefer = [
+    "google uk english male","google us english",
+    "microsoft guy","microsoft david","microsoft mark","microsoft james","microsoft george",
+    "daniel","oliver","thomas","fred","brian","justin","matthew","alex"
   ];
-  for (const p of preferred) { const v = by(p); if (v) return v; }
-
-  // Android-style local male tags (e.g., en-us-x-...#male_1-local)
-  const patternMale = en.find(v =>
-    /male/.test((v.name||"").toLowerCase()) || /male/.test((v.voiceURI||"").toLowerCase())
-  );
-  if (patternMale) return patternMale;
-
-  // Fallbacks
-  return by("google") || en[0] || voices[0];
+  const by = s => pool.find(v => (v.name||"").toLowerCase().includes(s));
+  for (const p of prefer) { const v = by(p); if (v) return v; }
+  const tagged = pool.find(v => /male/.test((v.name||"").toLowerCase()+ (v.voiceURI||"").toLowerCase()));
+  return tagged || pool.find(v => (v.name||"").toLowerCase().includes("google")) || pool[0];
 }
 
+function populateVoiceSelect() {
+  if (!("speechSynthesis" in window)) return;
+
+  const vs = listVoices();
+  if (!vs.length) return; // will run again on voiceschanged
+
+  // Keep it tiny: prefer English voices; fall back to all
+  const en = vs.filter(v => /^en([-_]|$)/i.test(v.lang || ""));
+  const items = en.length ? en : vs;
+
+  voiceSelect.innerHTML = "";
+  for (const v of items) {
+    const opt = document.createElement("option");
+    opt.value = voiceKey(v);
+    opt.textContent = `${v.name} (${v.lang})`;
+    voiceSelect.appendChild(opt);
+  }
+
+  let saved = null;
+  try { saved = localStorage.getItem(VOICE_KEY); } catch {}
+  let chosen = saved && findVoiceByKey(saved);
+  if (!chosen) chosen = pickMaleVoice(items);
+
+  if (chosen) {
+    const k = voiceKey(chosen);
+    voiceSelect.value = k;
+    try { localStorage.setItem(VOICE_KEY, k); } catch {}
+  }
+}
+
+/**************** SPEAK — uses selected voice ****************/
 function speak(text) {
   if (!("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
 
   const u = new SpeechSynthesisUtterance(String(text || " ").trim() || " ");
   u.lang   = "en-US";
-  u.rate   = 0.92; // calmer
-  u.pitch  = 0.82; // a bit deeper
+  u.rate   = 0.92; // calm
+  u.pitch  = 0.82; // deeper
   u.volume = 1;
 
-  const go = () => { const v = pickMaleVoice(); if (v) u.voice = v; speechSynthesis.speak(u); };
+  const go = () => {
+    // Selected voice if available, else a good male default
+    let chosen = null;
+    try {
+      const saved = localStorage.getItem(VOICE_KEY);
+      chosen = saved && findVoiceByKey(saved);
+    } catch {}
+    if (!chosen) chosen = pickMaleVoice();
+    if (chosen) u.voice = chosen;
+    speechSynthesis.speak(u);
+  };
+
   if (!speechSynthesis.getVoices().length) {
     speechSynthesis.addEventListener("voiceschanged", go, { once: true });
   } else { go(); }
 }
 
-// Prime audio once (mobile)
-document.addEventListener("click", function p(){ const u=new SpeechSynthesisUtterance(" "); u.volume=0; speechSynthesis.speak(u); document.removeEventListener("click",p); }, { once:true });
+/* prime audio once (mobile) */
+document.addEventListener("click", function p(){
+  const u=new SpeechSynthesisUtterance(" "); u.volume=0; speechSynthesis.speak(u);
+  document.removeEventListener("click",p);
+}, { once:true });
 
 /**************** UI helpers ****************/
 const $ = id => document.getElementById(id);
@@ -109,16 +155,16 @@ async function reverseGeocode(lat,lon){
   if(!r.ok) throw 0; const j=await r.json(); return j?.display_name||"";
 }
 
-/******** Music → open YouTube ********/
+/******** Music → YouTube ********/
 function openYouTube(query = "soothing music") {
   const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
   let win = null;
   try { win = window.open(url, "_blank", "noopener"); } catch {}
-  if (!win) window.location.href = url; // fallback if popups blocked
+  if (!win) window.location.href = url;
   show(`Opening YouTube for ${query}…`, false);
 }
 
-/******** Call for Help (with confirmation) ********/
+/******** Call for Help (confirm) ********/
 const HELP_NUMBER = "911"; // change if needed
 let confirmCall = false;
 function startHelpFlow(){
@@ -155,10 +201,17 @@ $("btnGPS")?.addEventListener("click", ()=>{
     }catch{ show(`Your location: Latitude ${lat.toFixed(5)}, Longitude ${lon.toFixed(5)}.`); }
   },()=>show("Location permission denied."));
 });
-$("btnMusic")?.addEventListener("click", ()=> openYouTube());   // YouTube on click
+$("btnMusic")?.addEventListener("click", ()=> openYouTube());
 $("btnHelp")?.addEventListener("click", startHelpFlow);
 
-/******** Voice recognition + wake word + chat ********/
+/* Voice picker events */
+$("btnTestVoice")?.addEventListener("click", ()=> speak("This is AIJOE. How can I help?"));
+voiceSelect?.addEventListener("change", () => {
+  try { localStorage.setItem(VOICE_KEY, voiceSelect.value); } catch {}
+  speak("Voice set.");
+});
+
+/******** Wake word + recognition ********/
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recog=null, voiceOn=false, armed=false, armTimer=null, chatMode=false;
 
@@ -239,5 +292,13 @@ $("btnMic")?.addEventListener("click", startVoice);
 $("btnMicStop")?.addEventListener("click", stopVoice);
 $("btnChat")?.addEventListener("click", ()=>{ chatMode=true; startVoice(); speak("Chat mode on. I’m listening."); });
 
-/* Preload voices */
-window.addEventListener("load", ()=>{ if("speechSynthesis" in window) speechSynthesis.getVoices(); });
+/* Init voice list */
+window.addEventListener("load", () => {
+  if ("speechSynthesis" in window) {
+    populateVoiceSelect();
+    // Some platforms fire voiceschanged late; refresh a couple times
+    speechSynthesis.addEventListener("voiceschanged", populateVoiceSelect);
+    setTimeout(populateVoiceSelect, 1000);
+    setTimeout(populateVoiceSelect, 3000);
+  }
+});
