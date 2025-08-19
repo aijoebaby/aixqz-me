@@ -5,69 +5,51 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>AIJOE – Voice Assistant</title>
   <meta name="theme-color" content="#0f172a"/>
-
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      color: #e5e7eb;
-      background: #0b1220;
-      min-height: 100dvh;
+      color: #e5e7eb; background: #0b1220; min-height: 100dvh;
     }
+    /* Joey full background */
+    .bg { position: fixed; inset: 0;
+      background: url("./joey.png") center / cover no-repeat fixed;
+      filter: saturate(1.05); z-index: -1; }
 
-    /* Joey full-bleed background */
-    .bg {
-      position: fixed; inset: 0;
-      background: url("./joey.png") center center / cover no-repeat fixed;
-      filter: saturate(1.05);
-      z-index: -1;
-    }
-
-    /* Frosted overlay panel */
+    /* Bottom-docked frosted panel under AIJOE’s head */
     .panel {
-      width: min(880px, 96vw);
-      margin: 24px auto;
-      background: rgba(2,6,23,0.70);
-      backdrop-filter: blur(8px);
-      border-radius: 18px;
-      box-shadow: 0 12px 28px rgba(0,0,0,.45);
-      padding: 18px;
+      position: fixed; left: 50%;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width: min(900px, 96vw);
+      background: rgba(2,6,23,0.72); backdrop-filter: blur(8px);
+      border-radius: 18px; box-shadow: 0 12px 28px rgba(0,0,0,.45);
+      padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
     }
 
     h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: .3px; }
-    .sub { margin: 0 0 12px; opacity: .9; }
+    .sub { margin: 0 0 10px; opacity: .9; }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 12px;
-      margin: 14px 0 16px;
-    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px,1fr));
+      gap: 10px; margin: 10px 0 12px; }
 
     button {
-      padding: 12px 14px;
-      border: 0; border-radius: 12px;
-      background: #2563eb; color: #fff; font-weight: 700;
-      cursor: pointer;
+      padding: 12px 14px; border: 0; border-radius: 12px;
+      background:#2563eb; color:#fff; font-weight:700; cursor:pointer;
       box-shadow: 0 4px 12px rgba(0,0,0,.25);
     }
     button:hover { filter: brightness(1.06); }
-    button.secondary { background: #0ea5e9; }
-    button.danger { background: #ef4444; }
+    button.secondary { background:#0ea5e9; }
+    button.danger { background:#ef4444; }
 
-    #output {
-      white-space: pre-wrap;
-      background: #0b122a; border: 1px solid #1f2a44;
-      padding: 12px; border-radius: 12px; min-height: 90px;
-    }
+    #output { white-space: pre-wrap; background:#0b122a; border:1px solid #1f2a44;
+      padding:12px; border-radius:12px; min-height:84px; }
 
-    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .badge {
-      padding: 6px 10px; border-radius: 999px; font-size: 12px;
-      background:#111827; border:1px solid #1f2937;
-    }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+    .badge { padding:6px 10px; border-radius:999px; font-size:12px;
+      background:#111827; border:1px solid #1f2937; }
     .foot { opacity:.85; font-size:12px; margin-top:8px; }
   </style>
 </head>
@@ -76,16 +58,21 @@
 
   <main class="panel" role="main" aria-live="polite">
     <h1>AIJOE HELLO</h1>
-    <p class="sub">Tap a button or say <strong>“AIJOE”</strong>. I’ll answer: <em>“How can I help?”</em></p>
+    <p class="sub">Say <b>“AIJOE”</b> or use the buttons. I’ll speak the results.</p>
 
     <div class="grid">
       <button id="btnVerse">📖 Bible Verse</button>
       <button id="btnJoke">😂 Joke</button>
       <button id="btnWeather">☀️ Weather</button>
       <button id="btnGPS">📍 GPS</button>
-      <button id="btnMic" class="secondary">🎤 Start Voice</button>
+      <button id="btnMusic">🎵 Music</button>
+      <button id="btnHelp" class="danger">🚨 Call for Help</button>
+      <button id="btnChat" class="secondary">🗣️ Talk to AIJOE</button>
+      <button id="btnMic">🎤 Start Voice</button>
       <button id="btnMicStop" class="danger">🛑 Stop Voice</button>
     </div>
+
+    <div id="output">I’ll speak everything I show here…</div>
 
     <div class="row">
       <span id="micStatus" class="badge">Mic: Off</span>
@@ -93,20 +80,12 @@
       <span id="lastHeard" class="badge">Heard: —</span>
     </div>
 
-    <div id="output">I’ll speak everything I show here…</div>
     <div class="foot">
-      Tips: allow <b>Microphone</b> and <b>Location</b> when prompted.
-      On phones, tap once anywhere to unlock audio, then tap again.
+      Tip: allow <b>Microphone</b> and <b>Location</b>. On phones, tap once to unlock audio.
     </div>
   </main>
 
   <script src="index.js" defer></script>
-
-  <!-- Optional service worker; safe if missing -->
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js").catch(()=>{});
-    }
-  </script>
+  <script> if ("serviceWorker" in navigator) { navigator.serviceWorker.register("service-worker.js").catch(()=>{}); } </script>
 </body>
 </html>
