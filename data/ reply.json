@@ -1,18 +1,10 @@
-/ ({
-  "reply": "Joey here — how can I help?"
-}
- root)
-├─ README.md
+/ (repo root)
 ├─ index.html
-├─ script.js          ← your main UI logic
-├─ style.css
+├─ index.js
+├─ style.css              (optional)
+├─ joey.png or joey-bg.png
 ├─ manifest.json
-├─ service-worker.js   ← make sure no spaces: “service-worker.js”
-├─ joey-bg.png
-│
-├─ netlify/
-│   └─ functions/
-│       └─ askAI.js    ← your serverless function
-│
+├─ service-worker.js      (optional, safe)
+├─ netlify.toml           (tiny file above OR delete it)
 └─ data/
-    └─ reply.json      ← if you need to ship a static “data.reply” file, rename it to .json
+   └─ reply.json          (ok to keep; won’t break anything)
