@@ -2,9 +2,29 @@
 try { window.AIJOE_ENDPOINT = null; } catch {}
 window.addEventListener("unhandledrejection", e => console.warn("Silenced bg error:", e.reason));
 
-/**************** Voice selection ****************/
+/* ========= VOICE SYSTEM (robust on phones) ========= */
 const VOICE_KEY = "aijoe.voice.key";
 const voiceSelect = document.getElementById("voiceSelect");
+const btnTest = document.getElementById("btnTestVoice");
+const btnRefresh = document.getElementById("btnRefreshVoices");
+
+/** Warm up voices (iOS/Safari often loads voices only after a speak) */
+function warmUpVoices(maxTries = 12, delay = 250) {
+  return new Promise((resolve) => {
+    let tries = 0;
+    const tick = () => {
+      const vs = speechSynthesis.getVoices();
+      if (vs && vs.length) return resolve(vs);
+      // Nudge the engine with a silent utterance
+      const u = new SpeechSynthesisUtterance(" ");
+      u.volume = 0; try { speechSynthesis.speak(u); } catch {}
+      tries++;
+      if (tries >= maxTries) return resolve(vs || []);
+      setTimeout(tick, delay);
+    };
+    tick();
+  });
+}
 
 function listVoices() {
   return speechSynthesis.getVoices();
@@ -14,32 +34,40 @@ function voiceKey(v) {
 }
 function findVoiceByKey(key) {
   const vs = listVoices();
-  return vs.find(v => v.voiceURI === key) ||
-         vs.find(v => `${v.name}|${v.lang}` === key) ||
-         vs.find(v => v.name === key);
+  return vs.find(v => v.voiceURI === key)
+      || vs.find(v => `${v.name}|${v.lang}` === key)
+      || vs.find(v => v.name === key);
 }
-function pickMaleVoice(fallbackList) {
-  const voices = (fallbackList && fallbackList.length) ? fallbackList : listVoices();
+
+/** Prefer common male-ish English voices across platforms */
+function pickMaleVoice(pool) {
+  const voices = (pool && pool.length) ? pool : listVoices();
+  if (!voices.length) return null;
+
   const en = voices.filter(v => /^en([-_]|$)/i.test(v.lang || ""));
-  const pool = en.length ? en : voices;
+  const p = en.length ? en : voices;
+
   const prefer = [
-    "google uk english male","google us english",
-    "microsoft guy","microsoft david","microsoft mark","microsoft james","microsoft george",
-    "daniel","oliver","thomas","fred","brian","justin","matthew","alex"
+    "google uk english male",
+    "google us english",
+    "microsoft guy", "microsoft david", "microsoft mark", "microsoft james", "microsoft george",
+    "alex", "daniel", "oliver", "thomas", "fred", "brian", "justin", "matthew"
   ];
-  const by = s => pool.find(v => (v.name||"").toLowerCase().includes(s));
-  for (const p of prefer) { const v = by(p); if (v) return v; }
-  const tagged = pool.find(v => /male/.test((v.name||"").toLowerCase()+ (v.voiceURI||"").toLowerCase()));
-  return tagged || pool.find(v => (v.name||"").toLowerCase().includes("google")) || pool[0];
+  const by = s => p.find(v => (v.name||"").toLowerCase().includes(s));
+  for (const needle of prefer) {
+    const v = by(needle);
+    if (v) return v;
+  }
+  const taggedMale = p.find(v =>
+    /male/.test((v.name||"").toLowerCase() + (v.voiceURI||"").toLowerCase())
+  );
+  return taggedMale || by("google") || en[0] || voices[0];
 }
 
-function populateVoiceSelect() {
-  if (!("speechSynthesis" in window)) return;
-
-  const vs = listVoices();
-  if (!vs.length) return; // will run again on voiceschanged
-
-  // Keep it tiny: prefer English voices; fall back to all
+function populateVoiceSelect(pool) {
+  if (!voiceSelect) return;
+  const vs = (pool && pool.length) ? pool : listVoices();
+  if (!vs.length) return;
   const en = vs.filter(v => /^en([-_]|$)/i.test(v.lang || ""));
   const items = en.length ? en : vs;
 
@@ -51,9 +79,12 @@ function populateVoiceSelect() {
     voiceSelect.appendChild(opt);
   }
 
-  let saved = null;
-  try { saved = localStorage.getItem(VOICE_KEY); } catch {}
-  let chosen = saved && findVoiceByKey(saved);
+  // Select saved or a good male default
+  let chosen = null;
+  try {
+    const saved = localStorage.getItem(VOICE_KEY);
+    if (saved) chosen = findVoiceByKey(saved);
+  } catch {}
   if (!chosen) chosen = pickMaleVoice(items);
 
   if (chosen) {
@@ -63,7 +94,7 @@ function populateVoiceSelect() {
   }
 }
 
-/**************** SPEAK — uses selected voice ****************/
+/** Speak using the selected voice (deeper, calmer) */
 function speak(text) {
   if (!("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
@@ -71,11 +102,10 @@ function speak(text) {
   const u = new SpeechSynthesisUtterance(String(text || " ").trim() || " ");
   u.lang   = "en-US";
   u.rate   = 0.92; // calm
-  u.pitch  = 0.82; // deeper
+  u.pitch  = 0.8;  // deeper
   u.volume = 1;
 
   const go = () => {
-    // Selected voice if available, else a good male default
     let chosen = null;
     try {
       const saved = localStorage.getItem(VOICE_KEY);
@@ -91,19 +121,49 @@ function speak(text) {
   } else { go(); }
 }
 
-/* prime audio once (mobile) */
-document.addEventListener("click", function p(){
-  const u=new SpeechSynthesisUtterance(" "); u.volume=0; speechSynthesis.speak(u);
-  document.removeEventListener("click",p);
-}, { once:true });
+/** Init voices reliably on load */
+async function initVoices() {
+  if (!("speechSynthesis" in window)) return;
+  // Try immediate; if empty, warm up and repopulate
+  let vs = listVoices();
+  if (!vs.length) {
+    vs = await warmUpVoices();
+  }
+  populateVoiceSelect(vs);
 
-/**************** UI helpers ****************/
+  // Some browsers fire voiceschanged later—listen and refresh
+  speechSynthesis.addEventListener("voiceschanged", () => {
+    populateVoiceSelect(listVoices());
+  });
+}
+
+// UI: Test + Refresh + Change handlers
+btnTest?.addEventListener("click", () => speak("This is AIJOE. How can I help?"));
+btnRefresh?.addEventListener("click", async () => {
+  const vs = await warmUpVoices();
+  populateVoiceSelect(vs);
+  speak("Voices refreshed.");
+});
+voiceSelect?.addEventListener("change", () => {
+  try { localStorage.setItem(VOICE_KEY, voiceSelect.value); } catch {}
+  speak("Voice set.");
+});
+
+// Prime audio once (mobile autoplay rules)
+document.addEventListener("click", function p() {
+  const u = new SpeechSynthesisUtterance(" ");
+  u.volume = 0; try { speechSynthesis.speak(u); } catch {}
+  document.removeEventListener("click", p);
+}, { once: true });
+
+
+/* ========= REST OF APP (unchanged) ========= */
 const $ = id => document.getElementById(id);
 const out = $("output"), micStatus=$("micStatus"), wakeStatus=$("wakeStatus"), lastHeard=$("lastHeard");
 function show(t, say=true){ out.textContent=t; if(say) speak(t); }
 const withTimeout=(p,ms=8000)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),ms))]);
 
-/******** Bible Verse ********/
+// Bible Verse
 const LOCAL_VERSES = [
   "Psalm 23:1 — The Lord is my shepherd; I shall not want.",
   "Philippians 4:13 — I can do all things through Christ who strengthens me.",
@@ -120,7 +180,7 @@ async function getBibleVerse(){
   }catch{ return LOCAL_VERSES[Math.floor(Math.random()*LOCAL_VERSES.length)]; }
 }
 
-/******** Joke ********/
+// Joke
 const LOCAL_JOKES = [
   "Why did the scarecrow win an award? Because he was outstanding in his field!",
   "I tried to catch fog yesterday. Mist.",
@@ -136,7 +196,7 @@ async function getJoke(){
   }catch{ return LOCAL_JOKES[Math.floor(Math.random()*LOCAL_JOKES.length)]; }
 }
 
-/******** Weather + GPS ********/
+// Weather + GPS
 const WCODE={0:"clear sky",1:"mainly clear",2:"partly cloudy",3:"overcast",45:"fog",48:"rime fog",
  51:"light drizzle",53:"moderate drizzle",55:"dense drizzle",
  61:"light rain",63:"moderate rain",65:"heavy rain",
@@ -155,7 +215,7 @@ async function reverseGeocode(lat,lon){
   if(!r.ok) throw 0; const j=await r.json(); return j?.display_name||"";
 }
 
-/******** Music → YouTube ********/
+// Music → YouTube
 function openYouTube(query = "soothing music") {
   const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
   let win = null;
@@ -164,7 +224,7 @@ function openYouTube(query = "soothing music") {
   show(`Opening YouTube for ${query}…`, false);
 }
 
-/******** Call for Help (confirm) ********/
+// Help (confirm)
 const HELP_NUMBER = "911"; // change if needed
 let confirmCall = false;
 function startHelpFlow(){
@@ -178,47 +238,8 @@ function performCall(){
   try { window.location.href = `tel:${HELP_NUMBER}`; } catch {}
 }
 
-/******** Buttons ********/
-$("/* ======= In-app Install & Share ======= */
-let deferredPrompt = null;
-
-// Show our Install button when the browser says the app is installable
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();           // don't show the default mini-infobar
-  deferredPrompt = e;           // save event for later
-  const btn = document.getElementById("btnInstall");
-  if (btn) btn.style.display = "inline-block";
-});
-
-// Handle Install button click
-document.getElementById("btnInstall")?.addEventListener("click", async () => {
-  if (!deferredPrompt) {
-    show("If you don’t see an install prompt, use your browser menu: Add to Home Screen.", false);
-    return;
-  }
-  deferredPrompt.prompt();
-  const choice = await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  show(
-    choice.outcome === "accepted"
-      ? "Installing… look for AIJOE on your home screen."
-      : "Install canceled.",
-    false
-  );
-});
-
-// Handle Share button (uses native share sheet when available)
-document.getElementById("btnShare")?.addEventListener("click", async () => {
-  const data = { title: "AIJOE", text: "Try AIJOE:", url: location.href };
-  if (navigator.share) {
-    try { await navigator.share(data); show("Shared!", false); }
-    catch { show("Share canceled.", false); }
-  } else {
-    try { await navigator.clipboard.writeText(location.href); show("Link copied—paste it to your friend!", false); }
-    catch { show("Couldn’t copy—just send them this link: " + location.href, false); }
-  }
-});
-")?.addEventListener("click", async()=>{ show("Loading Bible verse…"); show(await getBibleVerse()); });
+// Buttons
+$("btnVerse")?.addEventListener("click", async()=>{ show("Loading Bible verse…"); show(await getBibleVerse()); });
 $("btnJoke")?.addEventListener("click", async()=>{ show("Loading a joke…"); show(await getJoke()); });
 $("btnWeather")?.addEventListener("click", ()=>{
   show("Getting your weather (allow location)…");
@@ -243,22 +264,15 @@ $("btnGPS")?.addEventListener("click", ()=>{
 $("btnMusic")?.addEventListener("click", ()=> openYouTube());
 $("btnHelp")?.addEventListener("click", startHelpFlow);
 
-/* Voice picker events */
-$("btnTestVoice")?.addEventListener("click", ()=> speak("This is AIJOE. How can I help?"));
-voiceSelect?.addEventListener("change", () => {
-  try { localStorage.setItem(VOICE_KEY, voiceSelect.value); } catch {}
-  speak("Voice set.");
-});
-
-/******** Wake word + recognition ********/
+// Wake word + recognition + small talk
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recog=null, voiceOn=false, armed=false, armTimer=null, chatMode=false;
 
-function setMic(on){ micStatus.textContent=`Mic: ${on?"On":"Off"}`; }
-function setHeard(t){ lastHeard.textContent=`Heard: ${t||"—"}`; }
+function setMic(on){ document.getElementById("micStatus").textContent=`Mic: ${on?"On":"Off"}`; }
+function setHeard(t){ document.getElementById("lastHeard").textContent=`Heard: ${t||"—"}`; }
 function armFor(ms=10000){
-  armed=true; wakeStatus.textContent='Wake word: AIJOE ✅ (Listening for a command…)';
-  clearTimeout(armTimer); armTimer=setTimeout(()=>{ armed=false; wakeStatus.textContent='Wake word: “AIJOE”'; }, ms);
+  armed=true; document.getElementById("wakeStatus").textContent='Wake word: AIJOE ✅ (Listening for a command…)';
+  clearTimeout(armTimer); armTimer=setTimeout(()=>{ armed=false; document.getElementById("wakeStatus").textContent='Wake word: “AIJOE”'; }, ms);
 }
 function hasWakeWord(s){ return /(hey\s+)?(ai\s*joe|ai\s*joey|ai\s*jo|aijo|ayo)\b/.test(s); }
 
@@ -276,8 +290,8 @@ async function handleCommand(s){
 
   if(/(bible|verse)/.test(s))            return show(await getBibleVerse());
   if(/(joke|funny)/.test(s))             return show(await getJoke());
-  if(/(weather|temperature|forecast)/.test(s)) return $("btnWeather").click();
-  if(/(gps|where am i|my location|where.*am.*i)/.test(s)) return $("btnGPS").click();
+  if(/(weather|temperature|forecast)/.test(s)) return document.getElementById("btnWeather").click();
+  if(/(gps|where am i|my location|where.*am.*i)/.test(s)) return document.getElementById("btnGPS").click();
 
   if(/(music|song|play)/.test(s)) {
     const kind = /worship|praise/.test(s) ? "worship music"
@@ -300,7 +314,7 @@ function handleTranscript(raw){
   if(!t) return; setHeard(t);
 
   if(!armed && hasWakeWord(t)){ armFor(); speak("How can I help?"); return; }
-  if(armed){ armed=false; wakeStatus.textContent='Wake word: “AIJOE”'; handleCommand(t); return; }
+  if(armed){ armed=false; document.getElementById("wakeStatus").textContent='Wake word: “AIJOE”'; handleCommand(t); return; }
   if(chatMode){ handleCommand(t); }
 }
 
@@ -324,20 +338,14 @@ function startVoice(){
 function stopVoice(){
   voiceOn=false; chatMode=false; armed=false;
   try{ recog && recog.stop(); }catch{}
-  setMic(false); wakeStatus.textContent='Wake word: “AIJOE”';
+  setMic(false); document.getElementById("wakeStatus").textContent='Wake word: “AIJOE”';
 }
 
-$("btnMic")?.addEventListener("click", startVoice);
-$("btnMicStop")?.addEventListener("click", stopVoice);
-$("btnChat")?.addEventListener("click", ()=>{ chatMode=true; startVoice(); speak("Chat mode on. I’m listening."); });
+document.getElementById("btnMic")?.addEventListener("click", startVoice);
+document.getElementById("btnMicStop")?.addEventListener("click", stopVoice);
+document.getElementById("btnChat")?.addEventListener("click", ()=>{ chatMode=true; startVoice(); speak("Chat mode on. I’m listening."); });
 
-/* Init voice list */
+/* Init voice list on load */
 window.addEventListener("load", () => {
-  if ("speechSynthesis" in window) {
-    populateVoiceSelect();
-    // Some platforms fire voiceschanged late; refresh a couple times
-    speechSynthesis.addEventListener("voiceschanged", populateVoiceSelect);
-    setTimeout(populateVoiceSelect, 1000);
-    setTimeout(populateVoiceSelect, 3000);
-  }
+  if ("speechSynthesis" in window) initVoices();
 });
