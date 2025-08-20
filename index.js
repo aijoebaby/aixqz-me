@@ -179,7 +179,46 @@ function performCall(){
 }
 
 /******** Buttons ********/
-$("btnVerse")?.addEventListener("click", async()=>{ show("Loading Bible verse…"); show(await getBibleVerse()); });
+$("/* ======= In-app Install & Share ======= */
+let deferredPrompt = null;
+
+// Show our Install button when the browser says the app is installable
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();           // don't show the default mini-infobar
+  deferredPrompt = e;           // save event for later
+  const btn = document.getElementById("btnInstall");
+  if (btn) btn.style.display = "inline-block";
+});
+
+// Handle Install button click
+document.getElementById("btnInstall")?.addEventListener("click", async () => {
+  if (!deferredPrompt) {
+    show("If you don’t see an install prompt, use your browser menu: Add to Home Screen.", false);
+    return;
+  }
+  deferredPrompt.prompt();
+  const choice = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  show(
+    choice.outcome === "accepted"
+      ? "Installing… look for AIJOE on your home screen."
+      : "Install canceled.",
+    false
+  );
+});
+
+// Handle Share button (uses native share sheet when available)
+document.getElementById("btnShare")?.addEventListener("click", async () => {
+  const data = { title: "AIJOE", text: "Try AIJOE:", url: location.href };
+  if (navigator.share) {
+    try { await navigator.share(data); show("Shared!", false); }
+    catch { show("Share canceled.", false); }
+  } else {
+    try { await navigator.clipboard.writeText(location.href); show("Link copied—paste it to your friend!", false); }
+    catch { show("Couldn’t copy—just send them this link: " + location.href, false); }
+  }
+});
+")?.addEventListener("click", async()=>{ show("Loading Bible verse…"); show(await getBibleVerse()); });
 $("btnJoke")?.addEventListener("click", async()=>{ show("Loading a joke…"); show(await getJoke()); });
 $("btnWeather")?.addEventListener("click", ()=>{
   show("Getting your weather (allow location)…");
