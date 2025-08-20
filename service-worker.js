@@ -31,7 +31,10 @@ self.addEventListener("activate", (event) => {
   );
   self.clients.claim();
 });
-
+self.addEventListener("install", (e) => self.skipWaiting());
+self.addEventListener("activate", (e) => self.clients.claim());
+// Pass-through fetch so the SW is considered “controlling” (helps PWA install)
+self.addEventListener("fetch", () => {});
 // Fetch strategy:
 // - Never cache API calls to Netlify Functions (network-first, no cache)
 // - For navigation and static GETs, use stale-while-revalidate
