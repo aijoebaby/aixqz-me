@@ -357,7 +357,55 @@ Match these to your app so voice can “press” them for you:
 * Ask AIJOE / Chat → `btn-askai`
 
 (Or rename the IDs inside `handleCommand()` to whatever you already use.)
+function speak(text){
+  if (!("speechSynthesis" in window)) return;
+  const u = new SpeechSynthesisUtterance(String(text));
+  u.lang = "en-US";
+  const vs = speechSynthesis.getVoices();
+  const prefer = ['Google US English','Microsoft Guy','Microsoft David','Alex','Daniel'];
+  u.voice = vs.find(v => prefer.some(p => (v.name||'').includes(p))) || vs.find(v => v.lang?.startsWith("en")) || vs[0];
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
 
+window.addEventListener("load", ()=>{
+  const sel = document.getElementById("voice-select");
+  if (sel && "speechSynthesis" in window){
+    const fill = ()=>{
+      sel.innerHTML=""; speechSynthesis.getVoices().forEach((v,i)=>{
+        const o=document.createElement("option"); o.value=i; o.textContent=`${v.name} (${v.lang})`; sel.appendChild(o);
+      });
+    };
+    fill(); speechSynthesis.addEventListener("voiceschanged", fill);
+    sel.addEventListener("change", e=>{
+      const vs = speechSynthesis.getVoices();
+      const u = new SpeechSynthesisUtterance("Voice selected."); u.voice = vs[Number(e.target.value)];
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    });
+  }
+
+  document.getElementById("btn-voice-toggle")?.addEventListener("click", ()=>{
+    voiceOn = !voiceOn;
+    if (voiceOn){ speak("Voice enabled. Say AIJOE to wake me."); startWake(); }
+    else { speak("Voice disabled."); stopWake(); }
+  });
+
+  document.getElementById("btn-voice-enroll")?.addEventListener("click", async ()=>{
+    let phrase = prompt("Type a short phrase you will always say (example: purple pineapple)");
+    if (!phrase) return; phrase = phrase.trim();
+    speak("Please say: " + phrase);
+    const said = (await listenOnce(6000)).toLowerCase();
+    if (!said.includes(phrase.toLowerCase())){ speak("That didn't match. Try again."); return; }
+    localStorage.setItem(PASS_KEY, phrase);
+    speak("Saved. I will ask for that phrase after the wake word.");
+  });
+
+  const chk = document.getElementById("chk-require-voice");
+  if (chk){
+    chk.checked = JSON.parse(localStorage.getItem(REQUIRE_KEY)||"false");
+    chk.addEventListener("change", ()=> localStorage.setItem(REQUIRE_KEY, JSON.stringify(chk.checked)));
+  }
+});
 ---
 
 ## How to use (super simple)
