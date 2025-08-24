@@ -1,4 +1,27 @@
-# AIJOE Voice Kit (Browser‑only, copy‑paste)
+// ---- AIJOE voice.js self-test (put at very top) ----
+(function(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const ok = {
+    speechRec: !!SR,
+    speechSynth: "speechSynthesis" in window,
+    secure: location.protocol === "https:" || location.hostname === "localhost",
+  };
+  function log(flag, msg){
+    const s = flag ? "PASS" : "FAIL";
+    console[(flag ? "log" : "error")](`[AIJOE Voice Test] ${s}: ${msg}`);
+  }
+  log(ok.speechRec, "SpeechRecognition available");
+  log(ok.speechSynth, "SpeechSynthesis available");
+  log(ok.secure, "Secure context (https or localhost)");
+
+  if (!ok.speechRec) {
+    console.warn("Add a button that says: 'Voice not supported on this browser.'");
+  }
+  if (!ok.secure) {
+    console.warn("Microphone requires https or localhost for most browsers.");
+  }
+})();
+ AIJOE Voice Kit (Browser‑only, copy‑paste)
 
 This gives you **hands‑free voice control** with a wake phrase ("AIJOE") and a super‑simple **“knows it’s John”** check using a spoken passphrase (no cloud, saved only in your browser).
 
