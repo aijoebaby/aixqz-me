@@ -26,7 +26,26 @@
 This gives you **hands‑free voice control** with a wake phrase ("AIJOE") and a super‑simple **“knows it’s John”** check using a spoken passphrase (no cloud, saved only in your browser).
 
 Works best on **Android Chrome**. iOS Safari has limits with continuous listening.
+const REQUIRE_KEY = "requireMyVoice";
+const PASS_KEY = "voicePass";
 
+async function listenForCommand(){
+  const requireMine = JSON.parse(localStorage.getItem(REQUIRE_KEY)||"false");
+  const pass = localStorage.getItem(PASS_KEY)||"";
+
+  if (requireMine && pass){
+    speak("John, please say your passphrase.");
+    const said = (await listenOnce(6000)).toLowerCase();
+    if (!said.includes(pass.toLowerCase())){
+      speak("Sorry, that didn't match."); startWake(); return;
+    }
+  }
+  speak("Listening.");
+  const cmd = (await listenOnce(7000)).toLowerCase();
+  if (!cmd){ speak("I didn't catch that."); startWake(); return; }
+  handleCommand(cmd);
+  startWake();
+}
 ---
 
 ## What you get
